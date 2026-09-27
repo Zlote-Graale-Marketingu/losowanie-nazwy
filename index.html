@@ -20,9 +20,16 @@
     .progress-a { background: #007bff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: width 0.3s; }
     .progress-b { background: #dc3545; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: width 0.3s; }
     .badge { background: #e2e8f0; padding: 5px 10px; border-radius: 12px; font-size: 14px; color: #4a5568; }
+    .top-bar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+    .admin-link { background: transparent; color: #6c757d; border: 1px solid #ced4da; width: auto; padding: 6px 12px; font-size: 13px; font-weight: normal; }
   </style>
 </head>
 <body>
+
+  <!-- STAŁY PRZYCISK WEJŚCIA DLA PROWADZĄCEGO NA GÓRZE STRONY -->
+  <div class="top-bar">
+    <button onclick="openAdminModal()" class="admin-link">🔑 Panel Prowadzącego</button>
+  </div>
 
   <!-- FORMULARZ DLA ZGŁASZAJĄCYCH -->
   <div id="form-section" class="card">
@@ -32,8 +39,6 @@
     <input type="text" id="name2" placeholder="Druga nazwa" required>
     <button onclick="submitNames()">Wyślij zgłoszenie</button>
     <p id="msg" style="color: #28a745; font-weight: bold;"></p>
-    <hr>
-    <button onclick="showAdmin()" class="btn-secondary">Panel Prowadzącego</button>
   </div>
 
   <!-- EKRAN OCZEKIWANIA NA START TURNIEJU -->
@@ -59,8 +64,8 @@
   <div id="admin-login" class="card hidden">
     <h2>Panel Prowadzącego</h2>
     <input type="password" id="password" placeholder="Podaj hasło">
-    <button onclick="startTournament()">Rozpocznij Turniej z Głosowaniem na Żywo</button>
-    <button onclick="hideAdmin()" class="btn-secondary">← Powrót</button>
+    <button onclick="startTournament()">Wejdź do Panelu Prowadzącego</button>
+    <button onclick="hideAdmin()" class="btn-secondary">← Powrót do głosowania</button>
   </div>
 
   <!-- PANEL PROWADZĄCEGO (Wyniki na żywo) -->
@@ -106,7 +111,6 @@
     let hasVotedCurrentMatch = false;
     let currentMatchState = null;
 
-    // INICJALIZACJA NASŁUCHIWANIA NA ŻYWO
     window.onload = () => {
       listenToStateChanges();
     };
@@ -133,31 +137,41 @@
       }
     }
 
-    function showAdmin() {
+    function openAdminModal() {
       document.getElementById('form-section').classList.add('hidden');
+      document.getElementById('voter-section').classList.add('hidden');
+      document.getElementById('waiting-section').classList.add('hidden');
       document.getElementById('admin-login').classList.remove('hidden');
     }
 
     function hideAdmin() {
       document.getElementById('admin-login').classList.add('hidden');
-      document.getElementById('form-section').classList.remove('hidden');
+      if (currentMatchState && currentMatchState.is_active) {
+        document.getElementById('voter-section').classList.remove('hidden');
+      } else {
+        document.getElementById('form-section').classList.remove('hidden');
+      }
     }
 
-    // SYSTEM PROWADZĄCEGO
     async function startTournament() {
       const pwd = document.getElementById('password').value;
       if (pwd !== ADMIN_PASSWORD) return alert("Błędne hasło!");
 
-      const { data, error } = await db.from('items').select('*');
-      if (error || !data || data.length < 2) return alert("Za mało nazw w bazie (min. 2)!");
-
       isAdmin = true;
-      document.getElementById('admin-login').remove();
-      document.getElementById('form-section').remove();
+      document.getElementById('admin-login').classList.add('hidden');
+      document.getElementById('form-section').classList.add('hidden');
+      document.getElementById('voter-section').classList.add('hidden');
+      document.getElementById('waiting-section').classList.add('hidden');
       document.getElementById('admin-control').classList.remove('hidden');
 
-      currentMatches = pairInitialItems(data);
-      publishCurrentMatch();
+      const { data } = await db.from('items').select('*');
+      if (data && data.length >= 2) {
+        currentMatches = pairInitialItems(data);
+        publishCurrentMatch();
+      } else {
+        // Jeśli turniej już trwał, odświeżamy dane z bazy
+        updateVoteCounts();
+      }
     }
 
     function pairInitialItems(items) {
@@ -181,7 +195,6 @@
     async function publishCurrentMatch() {
       if (currentMatchIndex >= currentMatches.length) {
         if (nextRoundWinners.length === 1) {
-          // KONIEC TURNIEJU
           const winner = nextRoundWinners[0];
           await db.from('match_state').update({
             is_finished: true,
@@ -204,10 +217,8 @@
         return;
       }
 
-      // Czyszczenie poprzednich głosów
       await db.from('votes').delete().neq('id', 0);
 
-      // Zapisujemy nowy stan pojedynku do bazy
       await db.from('match_state').update({
         title_a: pair[0].title,
         title_b: pair[1].title,
@@ -230,7 +241,6 @@
       return pairs;
     }
 
-    // NASŁUCHIWANIE GŁOSÓW DLA PROWADZĄCEGO
     function listenToVotes() {
       db.channel('votes-channel')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'votes' }, () => {
@@ -241,25 +251,27 @@
     }
 
     async function updateVoteCounts() {
-      const pair = currentMatches[currentMatchIndex];
-      const { data } = await db.from('votes').select('chosen_title');
+      const { data: stateData } = await db.from('match_state').select('*').eq('id', 1).single();
+      if (!stateData) return;
+
+      const { data: votesData } = await db.from('votes').select('chosen_title');
       
       let countA = 0;
       let countB = 0;
 
-      if (data) {
-        countA = data.filter(v => v.chosen_title === pair[0].title).length;
-        countB = data.filter(v => v.chosen_title === pair[1].title).length;
+      if (votesData) {
+        countA = votesData.filter(v => v.chosen_title === stateData.title_a).length;
+        countB = votesData.filter(v => v.chosen_title === stateData.title_b).length;
       }
 
       const total = countA + countB || 1;
       const percentA = Math.round((countA / total) * 100);
       const percentB = 100 - percentA;
 
-      document.getElementById('admin-round').innerText = `Runda ${roundNumber} - Pojedynek ${currentMatchIndex + 1}/${currentMatches.length}`;
-      document.getElementById('admin-match-title').innerText = `${pair[0].title} VS ${pair[1].title}`;
-      document.getElementById('label-a').innerText = `${pair[0].title}: ${countA} głosów`;
-      document.getElementById('label-b').innerText = `${pair[1].title}: ${countB} głosów`;
+      document.getElementById('admin-round').innerText = stateData.round_info || 'Runda 1';
+      document.getElementById('admin-match-title').innerText = `${stateData.title_a} VS ${stateData.title_b}`;
+      document.getElementById('label-a').innerText = `${stateData.title_a}: ${countA} głosów`;
+      document.getElementById('label-b').innerText = `${stateData.title_b}: ${countB} głosów`;
 
       document.getElementById('bar-a').style.width = `${percentA}%`;
       document.getElementById('bar-a').innerText = countA > 0 ? `${countA}` : '';
@@ -268,13 +280,17 @@
     }
 
     async function nextMatch() {
+      if (currentMatches.length === 0) {
+        alert("Brak aktywnych pojedynków w pamięci. Rozpocznij turniej od nowa.");
+        return;
+      }
+
       const pair = currentMatches[currentMatchIndex];
       const { data } = await db.from('votes').select('chosen_title');
       
       let countA = data ? data.filter(v => v.chosen_title === pair[0].title).length : 0;
       let countB = data ? data.filter(v => v.chosen_title === pair[1].title).length : 0;
 
-      // W przypadku remisu losujemy
       let winner = (countA > countB) ? pair[0] : (countB > countA) ? pair[1] : (Math.random() > 0.5 ? pair[0] : pair[1]);
 
       nextRoundWinners.push(winner);
@@ -282,7 +298,6 @@
       publishCurrentMatch();
     }
 
-    // NASŁUCHIWANIE DLA UCZESTNIKÓW (TELEFONY)
     function listenToStateChanges() {
       db.channel('state-channel')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_state' }, payload => {
@@ -290,14 +305,13 @@
         })
         .subscribe();
 
-      // Pierwszy odczyt
       db.from('match_state').select('*').eq('id', 1).single().then(({ data }) => {
         if (data) handleStateUpdate(data);
       });
     }
 
     function handleStateUpdate(state) {
-      if (isAdmin) return; // Prowadzący ma własny widok
+      if (isAdmin) return;
 
       if (state.is_finished) {
         document.getElementById('form-section').classList.add('hidden');
@@ -310,7 +324,6 @@
       }
 
       if (state.is_active) {
-        // Jeśli zmienił się pojedynek, odblokowujemy przyciski głosowania
         if (!currentMatchState || currentMatchState.title_a !== state.title_a || currentMatchState.title_b !== state.title_b) {
           hasVotedCurrentMatch = false;
           document.getElementById('voted-msg').classList.add('hidden');
