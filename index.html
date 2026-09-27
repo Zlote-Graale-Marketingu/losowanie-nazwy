@@ -89,8 +89,9 @@
 
     <button onclick="nextMatch()" class="btn-success">Zakończ głosowanie i przejdź dalej ➔</button>
     <hr style="margin: 20px 0; border: none; border-top: 1px solid #e9ecef;">
+    <button onclick="stopVotingAndReturnToForm()" class="btn-secondary">🛑 Zakończ głosowanie i otwórz zgłoszenia</button>
     <button onclick="restartTournament()" class="btn-warning">🔄 Ponów losowanie z obecnych nazw</button>
-    <button onclick="fullResetApp()" class="btn-danger">🔥 Pełny reset (czyszczenie nazw i powrót do formularza)</button>
+    <button onclick="fullResetApp()" class="btn-danger">🔥 Pełny reset (czyszczenie bazy i nazw)</button>
   </div>
 
   <!-- WYNIK FINALNY -->
@@ -194,6 +195,29 @@
       nextRoundWinners = [];
       currentMatches = pairInitialItems(data);
       publishCurrentMatch();
+    }
+
+    async function stopVotingAndReturnToForm() {
+      if (!confirm("Czy na pewno chcesz zakończyć aktywne głosowanie i przywrócić formularz dodawania nazw?")) return;
+
+      await db.from('votes').delete().neq('id', 0);
+      await db.from('match_state').update({
+        is_active: false,
+        is_finished: false,
+        title_a: null,
+        title_b: null,
+        winner_title: null,
+        winner_author: null,
+        round_info: null
+      }).eq('id', 1);
+
+      currentMatches = [];
+      currentMatchIndex = 0;
+      nextRoundWinners = [];
+      roundNumber = 1;
+
+      alert("Głosowanie zostało wyłączone. Uczestnicy widzą formularz zgłoszeniowy.");
+      location.reload();
     }
 
     async function restartTournament() {
@@ -355,7 +379,6 @@
       } else if (countB > countA) {
         nextRoundWinners.push(pair[1]);
       } else {
-        // W PRZYPADKU REMISU OBIE NAZWY AWANSUJĄ DO KOLEJNEJ RUNDY
         nextRoundWinners.push(pair[0]);
         nextRoundWinners.push(pair[1]);
       }
