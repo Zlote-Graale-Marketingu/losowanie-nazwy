@@ -208,7 +208,6 @@
     async function fullResetApp() {
       if (!confirm("⚠️ Czy na pewno chcesz WYCZYSZCZYĆ całą bazę i zacząć od nowa od formularza zgłoszeń? Usunie to wszystkie dodane nazwy!")) return;
 
-      // Wyczyszczenie nazw, głosów i stanu w bazie
       await db.from('votes').delete().neq('id', 0);
       await db.from('items').delete().neq('id', 0);
       await db.from('match_state').update({
@@ -351,9 +350,16 @@
       let countA = data ? data.filter(v => v.chosen_title === pair[0].title).length : 0;
       let countB = data ? data.filter(v => v.chosen_title === pair[1].title).length : 0;
 
-      let winner = (countA > countB) ? pair[0] : (countB > countA) ? pair[1] : (Math.random() > 0.5 ? pair[0] : pair[1]);
+      if (countA > countB) {
+        nextRoundWinners.push(pair[0]);
+      } else if (countB > countA) {
+        nextRoundWinners.push(pair[1]);
+      } else {
+        // W PRZYPADKU REMISU OBIE NAZWY AWANSUJĄ DO KOLEJNEJ RUNDY
+        nextRoundWinners.push(pair[0]);
+        nextRoundWinners.push(pair[1]);
+      }
 
-      nextRoundWinners.push(winner);
       currentMatchIndex++;
       publishCurrentMatch();
     }
@@ -401,7 +407,6 @@
         document.getElementById('vote-btn-a').innerText = state.title_a;
         document.getElementById('vote-btn-b').innerText = state.title_b;
       } else {
-        // Jeśli brak aktywnego turnieju, powracamy do formularza
         document.getElementById('winner-section').classList.add('hidden');
         document.getElementById('voter-section').classList.add('hidden');
         document.getElementById('waiting-section').classList.add('hidden');
