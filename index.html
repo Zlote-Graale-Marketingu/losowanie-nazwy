@@ -14,6 +14,8 @@
     .btn-secondary { background: #6c757d; }
     .btn-danger { background: #dc3545; }
     .btn-danger:hover { background: #bd2130; }
+    .btn-warning { background: #ffc107; color: #212529; }
+    .btn-warning:hover { background: #e0a800; }
     .btn-success { background: #28a745; }
     .vote-box { display: flex; gap: 15px; margin-top: 20px; }
     .vote-btn { flex: 1; padding: 25px 10px; font-size: 20px; word-break: break-word; }
@@ -87,7 +89,8 @@
 
     <button onclick="nextMatch()" class="btn-success">Zakończ głosowanie i przejdź dalej ➔</button>
     <hr style="margin: 20px 0; border: none; border-top: 1px solid #e9ecef;">
-    <button onclick="restartTournament()" class="btn-danger">🔄 Zacznij turniej od początku</button>
+    <button onclick="restartTournament()" class="btn-warning">🔄 Ponów losowanie z obecnych nazw</button>
+    <button onclick="fullResetApp()" class="btn-danger">🔥 Pełny reset (czyszczenie nazw i powrót do formularza)</button>
   </div>
 
   <!-- WYNIK FINALNY -->
@@ -145,12 +148,15 @@
       document.getElementById('form-section').classList.add('hidden');
       document.getElementById('voter-section').classList.add('hidden');
       document.getElementById('waiting-section').classList.add('hidden');
+      document.getElementById('winner-section').classList.add('hidden');
       document.getElementById('admin-login').classList.remove('hidden');
     }
 
     function hideAdmin() {
       document.getElementById('admin-login').classList.add('hidden');
-      if (currentMatchState && currentMatchState.is_active) {
+      if (currentMatchState && currentMatchState.is_finished) {
+        document.getElementById('winner-section').classList.remove('hidden');
+      } else if (currentMatchState && currentMatchState.is_active) {
         document.getElementById('voter-section').classList.remove('hidden');
       } else {
         document.getElementById('form-section').classList.remove('hidden');
@@ -166,6 +172,7 @@
       document.getElementById('form-section').classList.add('hidden');
       document.getElementById('voter-section').classList.add('hidden');
       document.getElementById('waiting-section').classList.add('hidden');
+      document.getElementById('winner-section').classList.add('hidden');
       document.getElementById('admin-control').classList.remove('hidden');
 
       const { data } = await db.from('items').select('*');
@@ -190,12 +197,37 @@
     }
 
     async function restartTournament() {
-      if (!confirm("Czy na pewno chcesz zresetować turniej i rozpocząć od 1. rundy?")) return;
+      if (!confirm("Czy na pewno chcesz ponowić losowanie z obecnych nazw?")) return;
 
       const { data } = await db.from('items').select('*');
       if (!data || data.length < 2) return alert("Za mało nazw w bazie!");
 
       initNewTournament(data);
+    }
+
+    async function fullResetApp() {
+      if (!confirm("⚠️ Czy na pewno chcesz WYCZYSZCZYĆ całą bazę i zacząć od nowa od formularza zgłoszeń? Usunie to wszystkie dodane nazwy!")) return;
+
+      // Wyczyszczenie nazw, głosów i stanu w bazie
+      await db.from('votes').delete().neq('id', 0);
+      await db.from('items').delete().neq('id', 0);
+      await db.from('match_state').update({
+        is_active: false,
+        is_finished: false,
+        title_a: null,
+        title_b: null,
+        winner_title: null,
+        winner_author: null,
+        round_info: null
+      }).eq('id', 1);
+
+      currentMatches = [];
+      currentMatchIndex = 0;
+      nextRoundWinners = [];
+      roundNumber = 1;
+
+      alert("Aplikacja została w pełni wyczyszczona. Uczestnicy mogą od nowa podawać nazwy!");
+      location.reload();
     }
 
     function pairInitialItems(items) {
@@ -309,7 +341,7 @@
 
     async function nextMatch() {
       if (currentMatches.length === 0) {
-        alert("Brak aktywnych pojedynków. Kliknij 'Zacznij turniej od początku'.");
+        alert("Brak aktywnych pojedynków. Użyj przycisków poniżej, aby rozpocząć turniej.");
         return;
       }
 
@@ -360,6 +392,7 @@
         }
 
         currentMatchState = state;
+        document.getElementById('winner-section').classList.add('hidden');
         document.getElementById('form-section').classList.add('hidden');
         document.getElementById('waiting-section').classList.add('hidden');
         document.getElementById('voter-section').classList.remove('hidden');
@@ -367,6 +400,12 @@
         document.getElementById('voter-round').innerText = state.round_info;
         document.getElementById('vote-btn-a').innerText = state.title_a;
         document.getElementById('vote-btn-b').innerText = state.title_b;
+      } else {
+        // Jeśli brak aktywnego turnieju, powracamy do formularza
+        document.getElementById('winner-section').classList.add('hidden');
+        document.getElementById('voter-section').classList.add('hidden');
+        document.getElementById('waiting-section').classList.add('hidden');
+        document.getElementById('form-section').classList.remove('hidden');
       }
     }
 
