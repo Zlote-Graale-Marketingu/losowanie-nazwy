@@ -12,6 +12,8 @@
     button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
     button:hover { background: #0056b3; }
     .btn-secondary { background: #6c757d; }
+    .btn-danger { background: #dc3545; }
+    .btn-danger:hover { background: #bd2130; }
     .btn-success { background: #28a745; }
     .vote-box { display: flex; gap: 15px; margin-top: 20px; }
     .vote-btn { flex: 1; padding: 25px 10px; font-size: 20px; word-break: break-word; }
@@ -84,6 +86,8 @@
     </div>
 
     <button onclick="nextMatch()" class="btn-success">Zakończ głosowanie i przejdź dalej ➔</button>
+    <hr style="margin: 20px 0; border: none; border-top: 1px solid #e9ecef;">
+    <button onclick="restartTournament()" class="btn-danger">🔄 Zacznij turniej od początku</button>
   </div>
 
   <!-- WYNIK FINALNY -->
@@ -165,13 +169,33 @@
       document.getElementById('admin-control').classList.remove('hidden');
 
       const { data } = await db.from('items').select('*');
-      if (data && data.length >= 2) {
-        currentMatches = pairInitialItems(data);
-        publishCurrentMatch();
+      if (!data || data.length < 2) {
+        alert("Za mało nazw w bazie (min. 2), aby rozpocząć!");
+        return;
+      }
+
+      if (currentMatches.length === 0) {
+        initNewTournament(data);
       } else {
-        // Jeśli turniej już trwał, odświeżamy dane z bazy
         updateVoteCounts();
       }
+    }
+
+    function initNewTournament(data) {
+      roundNumber = 1;
+      currentMatchIndex = 0;
+      nextRoundWinners = [];
+      currentMatches = pairInitialItems(data);
+      publishCurrentMatch();
+    }
+
+    async function restartTournament() {
+      if (!confirm("Czy na pewno chcesz zresetować turniej i rozpocząć od 1. rundy?")) return;
+
+      const { data } = await db.from('items').select('*');
+      if (!data || data.length < 2) return alert("Za mało nazw w bazie!");
+
+      initNewTournament(data);
     }
 
     function pairInitialItems(items) {
@@ -198,6 +222,7 @@
           const winner = nextRoundWinners[0];
           await db.from('match_state').update({
             is_finished: true,
+            is_active: false,
             winner_title: winner.title,
             winner_author: winner.author
           }).eq('id', 1);
@@ -219,13 +244,17 @@
 
       await db.from('votes').delete().neq('id', 0);
 
+      const roundText = `Runda ${roundNumber} - Pojedynek ${currentMatchIndex + 1}/${currentMatches.length}`;
+
       await db.from('match_state').update({
         title_a: pair[0].title,
         title_b: pair[1].title,
-        round_info: `Runda ${roundNumber} - Pojedynek ${currentMatchIndex + 1}/${currentMatches.length}`,
-        is_active: true
+        round_info: roundText,
+        is_active: true,
+        is_finished: false
       }).eq('id', 1);
 
+      updateVoteCounts();
       listenToVotes();
     }
 
@@ -247,7 +276,6 @@
           updateVoteCounts();
         })
         .subscribe();
-      updateVoteCounts();
     }
 
     async function updateVoteCounts() {
@@ -281,7 +309,7 @@
 
     async function nextMatch() {
       if (currentMatches.length === 0) {
-        alert("Brak aktywnych pojedynków w pamięci. Rozpocznij turniej od nowa.");
+        alert("Brak aktywnych pojedynków. Kliknij 'Zacznij turniej od początku'.");
         return;
       }
 
