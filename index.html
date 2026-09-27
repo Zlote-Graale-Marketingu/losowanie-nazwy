@@ -13,9 +13,12 @@
     button:hover { background: #0056b3; }
     .btn-secondary { background: #6c757d; }
     .btn-secondary:hover { background: #5a6268; }
+    .btn-success { background: #28a745; margin-top: 15px; }
+    .btn-success:hover { background: #218838; }
     .match-box { display: flex; gap: 10px; margin-top: 15px; }
     .option-btn { flex: 1; padding: 20px; font-size: 18px; font-weight: bold; }
     .hidden { display: none; }
+    .author-badge { font-size: 18px; color: #555; margin-top: 10px; font-weight: normal; }
   </style>
 </head>
 <body>
@@ -53,7 +56,11 @@
   <!-- WYNIK FINALNY -->
   <div id="winner-section" class="card hidden" style="text-align: center;">
     <h2>🏆 Zwycięska Nazwa 🏆</h2>
-    <h1 id="winner-name" style="color: #28a745;"></h1>
+    <h1 id="winner-name" style="color: #28a745; margin-bottom: 5px;"></h1>
+    <div id="author-box" class="author-badge hidden">
+      Autor propozycji: <strong id="winner-author"></strong>
+    </div>
+    <button id="reveal-btn" onclick="revealAuthor()" class="btn-success">🔍 Odkryj autora nazwy</button>
   </div>
 
   <script>
@@ -67,6 +74,7 @@
     let currentMatchIndex = 0;
     let nextRoundWinners = [];
     let roundNumber = 1;
+    let finalWinnerObj = null;
 
     async function submitNames() {
       const user = document.getElementById('user').value.trim();
@@ -110,7 +118,7 @@
       const preparedList = pairInitialItems(data);
       currentMatches = preparedList;
 
-      // Całkowite ukrycie formularzy dodawania i logowania
+      // Usunięcie formularzy dodawania i logowania
       document.getElementById('form-section').remove();
       document.getElementById('admin-login').remove();
       
@@ -145,7 +153,7 @@
     function renderMatch() {
       if (currentMatchIndex >= currentMatches.length) {
         if (nextRoundWinners.length === 1) {
-          showFinalWinner(nextRoundWinners[0].title);
+          showFinalWinner(nextRoundWinners[0]);
           return;
         }
         
@@ -190,10 +198,17 @@
       return pairs;
     }
 
-    function showFinalWinner(title) {
+    function showFinalWinner(winnerObj) {
+      finalWinnerObj = winnerObj;
       document.getElementById('tournament-section').classList.add('hidden');
       document.getElementById('winner-section').classList.remove('hidden');
-      document.getElementById('winner-name').innerText = title;
+      document.getElementById('winner-name').innerText = winnerObj.title;
+      document.getElementById('winner-author').innerText = winnerObj.author;
+    }
+
+    function revealAuthor() {
+      document.getElementById('author-box').classList.remove('hidden');
+      document.getElementById('reveal-btn').classList.add('hidden');
     }
   </script>
 </body>
