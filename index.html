@@ -11,6 +11,8 @@
     input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
     button { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
     button:hover { background: #0056b3; }
+    .btn-secondary { background: #6c757d; }
+    .btn-secondary:hover { background: #5a6268; }
     .match-box { display: flex; gap: 10px; margin-top: 15px; }
     .option-btn { flex: 1; padding: 20px; font-size: 18px; font-weight: bold; }
     .hidden { display: none; }
@@ -27,7 +29,7 @@
     <button onclick="submitNames()">Wyślij zgłoszenie</button>
     <p id="msg"></p>
     <hr>
-    <button onclick="showAdmin()" style="background: #6c757d;">Panel Prowadzącego (Losowanie)</button>
+    <button onclick="showAdmin()" class="btn-secondary">Panel Prowadzącego (Losowanie)</button>
   </div>
 
   <!-- PANEL LOGOWANIA DLA PROWADZĄCEGO -->
@@ -35,6 +37,7 @@
     <h2>Uruchomienie Turnieju</h2>
     <input type="password" id="password" placeholder="Podaj hasło">
     <button onclick="startTournament()">Rozpocznij Losowanie</button>
+    <button onclick="hideAdmin()" class="btn-secondary">← Powrót do dodawania nazw</button>
   </div>
 
   <!-- EKRAN TURNIEJU -->
@@ -54,7 +57,6 @@
   </div>
 
   <script>
-    // TWOJE DANE SUPABASE Z SZYBKA PODMIANĄ:
     const SUPABASE_URL = "https://skgblorvvqlahzvbpqps.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrZ2Jsb3J2dnFsYWh6dmJwcXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc5OTA0MzE0MzM5OTAsImV4cCI6MjA1MzU2MDQzMX0.zrnC8JgN_N7AphLnti7UjkDwVY6";
     const ADMIN_PASSWORD = "skarpetka"; 
@@ -93,6 +95,11 @@
       document.getElementById('admin-login').classList.remove('hidden');
     }
 
+    function hideAdmin() {
+      document.getElementById('admin-login').classList.add('hidden');
+      document.getElementById('form-section').classList.remove('hidden');
+    }
+
     async function startTournament() {
       const pwd = document.getElementById('password').value;
       if (pwd !== ADMIN_PASSWORD) return alert("Błędne hasło!");
@@ -103,7 +110,10 @@
       const preparedList = pairInitialItems(data);
       currentMatches = preparedList;
 
-      document.getElementById('admin-login').classList.add('hidden');
+      // Całkowite ukrycie formularzy dodawania i logowania
+      document.getElementById('form-section').remove();
+      document.getElementById('admin-login').remove();
+      
       document.getElementById('tournament-section').classList.remove('hidden');
       renderMatch();
     }
