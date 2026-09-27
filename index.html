@@ -3,22 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Turniej Nazw</title>
+  <title>Głosowanie na żywo - Turniej Nazw</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; background: #f4f4f9; }
-    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
-    button { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border-radius: 6px; font-size: 16px; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
     button:hover { background: #0056b3; }
     .btn-secondary { background: #6c757d; }
-    .btn-secondary:hover { background: #5a6268; }
-    .btn-success { background: #28a745; margin-top: 15px; }
-    .btn-success:hover { background: #218838; }
-    .match-box { display: flex; gap: 10px; margin-top: 15px; }
-    .option-btn { flex: 1; padding: 20px; font-size: 18px; font-weight: bold; }
+    .btn-success { background: #28a745; }
+    .vote-box { display: flex; gap: 15px; margin-top: 20px; }
+    .vote-btn { flex: 1; padding: 25px 10px; font-size: 20px; word-break: break-word; }
     .hidden { display: none; }
-    .author-badge { font-size: 18px; color: #555; margin-top: 10px; font-weight: normal; }
+    .progress-bar-container { background: #e9ecef; border-radius: 8px; overflow: hidden; margin: 10px 0; display: flex; height: 35px; }
+    .progress-a { background: #007bff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: width 0.3s; }
+    .progress-b { background: #dc3545; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: width 0.3s; }
+    .badge { background: #e2e8f0; padding: 5px 10px; border-radius: 12px; font-size: 14px; color: #4a5568; }
   </style>
 </head>
 <body>
@@ -30,37 +31,64 @@
     <input type="text" id="name1" placeholder="Pierwsza nazwa" required>
     <input type="text" id="name2" placeholder="Druga nazwa" required>
     <button onclick="submitNames()">Wyślij zgłoszenie</button>
-    <p id="msg"></p>
+    <p id="msg" style="color: #28a745; font-weight: bold;"></p>
     <hr>
-    <button onclick="showAdmin()" class="btn-secondary">Panel Prowadzącego (Losowanie)</button>
+    <button onclick="showAdmin()" class="btn-secondary">Panel Prowadzącego</button>
   </div>
 
-  <!-- PANEL LOGOWANIA DLA PROWADZĄCEGO -->
-  <div id="admin-login" class="card hidden">
-    <h2>Uruchomienie Turnieju</h2>
-    <input type="password" id="password" placeholder="Podaj hasło">
-    <button onclick="startTournament()">Rozpocznij Losowanie</button>
-    <button onclick="hideAdmin()" class="btn-secondary">← Powrót do dodawania nazw</button>
+  <!-- EKRAN OCZEKIWANIA NA START TURNIEJU -->
+  <div id="waiting-section" class="card hidden">
+    <h2>⌛ Oczekiwanie na rozpoczęcie turnieju...</h2>
+    <p>Gdy prowadzący uruchomi pojedynki, opcje do głosowania pojawią się automatycznie na Twoim ekranie.</p>
   </div>
 
-  <!-- EKRAN TURNIEJU -->
-  <div id="tournament-section" class="card hidden">
-    <h2 id="round-title">Runda</h2>
-    <p>Kliknij nazwę, która wygrywa pojedynek:</p>
-    <div class="match-box">
-      <button id="btn1" class="option-btn" onclick="selectWinner(0)"></button>
-      <button id="btn2" class="option-btn" onclick="selectWinner(1)"></button>
+  <!-- PANEL DLA UCZESTNIKA (GŁOSOWANIE) -->
+  <div id="voter-section" class="card hidden">
+    <span id="voter-round" class="badge">Runda 1</span>
+    <h2 style="margin-top: 15px;">Kto powinien wygrać?</h2>
+    <div class="vote-box">
+      <button id="vote-btn-a" class="vote-btn" onclick="castVote('A')"></button>
+      <button id="vote-btn-b" class="vote-btn" style="background: #dc3545;" onclick="castVote('B')"></button>
     </div>
+    <p id="voted-msg" class="hidden" style="color: #28a745; font-weight: bold; margin-top: 15px;">
+      ✅ Twój głos został zarejestrowany! Czekaj na kolejny pojedynek.
+    </p>
+  </div>
+
+  <!-- LOGOWANIE PROWADZĄCEGO -->
+  <div id="admin-login" class="card hidden">
+    <h2>Panel Prowadzącego</h2>
+    <input type="password" id="password" placeholder="Podaj hasło">
+    <button onclick="startTournament()">Rozpocznij Turniej z Głosowaniem na Żywo</button>
+    <button onclick="hideAdmin()" class="btn-secondary">← Powrót</button>
+  </div>
+
+  <!-- PANEL PROWADZĄCEGO (Wyniki na żywo) -->
+  <div id="admin-control" class="card hidden">
+    <span id="admin-round" class="badge">Runda 1</span>
+    <h2 id="admin-match-title">Pojedynek</h2>
+    
+    <div class="progress-bar-container">
+      <div id="bar-a" class="progress-a" style="width: 50%;">0</div>
+      <div id="bar-b" class="progress-b" style="width: 50%;">0</div>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 15px;">
+      <span id="label-a" style="color: #007bff;">-</span>
+      <span id="label-b" style="color: #dc3545;">-</span>
+    </div>
+
+    <button onclick="nextMatch()" class="btn-success">Zakończ głosowanie i przejdź dalej ➔</button>
   </div>
 
   <!-- WYNIK FINALNY -->
-  <div id="winner-section" class="card hidden" style="text-align: center;">
+  <div id="winner-section" class="card hidden">
     <h2>🏆 Zwycięska Nazwa 🏆</h2>
     <h1 id="winner-name" style="color: #28a745; margin-bottom: 5px;"></h1>
-    <div id="author-box" class="author-badge hidden">
+    <div id="author-box" class="hidden" style="margin-top: 15px; font-size: 18px;">
       Autor propozycji: <strong id="winner-author"></strong>
     </div>
-    <button id="reveal-btn" onclick="revealAuthor()" class="btn-success">🔍 Odkryj autora nazwy</button>
+    <button id="reveal-btn" onclick="revealAuthor()" class="btn-success" style="margin-top: 20px;">🔍 Odkryj autora nazwy</button>
   </div>
 
   <script>
@@ -74,7 +102,14 @@
     let currentMatchIndex = 0;
     let nextRoundWinners = [];
     let roundNumber = 1;
-    let finalWinnerObj = null;
+    let isAdmin = false;
+    let hasVotedCurrentMatch = false;
+    let currentMatchState = null;
+
+    // INICJALIZACJA NASŁUCHIWANIA NA ŻYWO
+    window.onload = () => {
+      listenToStateChanges();
+    };
 
     async function submitNames() {
       const user = document.getElementById('user').value.trim();
@@ -108,87 +143,84 @@
       document.getElementById('form-section').classList.remove('hidden');
     }
 
+    // SYSTEM PROWADZĄCEGO
     async function startTournament() {
       const pwd = document.getElementById('password').value;
       if (pwd !== ADMIN_PASSWORD) return alert("Błędne hasło!");
 
       const { data, error } = await db.from('items').select('*');
-      if (error || !data || data.length < 2) return alert("Za mało nazw w bazie (wymagane minimum 2)!");
+      if (error || !data || data.length < 2) return alert("Za mało nazw w bazie (min. 2)!");
 
-      const preparedList = pairInitialItems(data);
-      currentMatches = preparedList;
-
-      // Usunięcie formularzy dodawania i logowania
-      document.getElementById('form-section').remove();
+      isAdmin = true;
       document.getElementById('admin-login').remove();
-      
-      document.getElementById('tournament-section').classList.remove('hidden');
-      renderMatch();
+      document.getElementById('form-section').remove();
+      document.getElementById('admin-control').classList.remove('hidden');
+
+      currentMatches = pairInitialItems(data);
+      publishCurrentMatch();
     }
 
     function pairInitialItems(items) {
       let shuffled = [...items].sort(() => Math.random() - 0.5);
       let pairs = [];
-      
       while (shuffled.length > 1) {
         let itemA = shuffled.shift();
         let indexB = shuffled.findIndex(item => item.author !== itemA.author);
-
         if (indexB !== -1) {
-          let itemB = shuffled.splice(indexB, 1)[0];
-          pairs.push([itemA, itemB]);
+          pairs.push([itemA, shuffled.splice(indexB, 1)[0]]);
         } else {
-          let itemB = shuffled.shift();
-          pairs.push([itemA, itemB]);
+          pairs.push([itemA, shuffled.shift()]);
         }
       }
-
       if (shuffled.length === 1) {
         pairs.push([shuffled[0], { title: "Wolny Los (Automatyczny awans)", isBye: true }]);
       }
-
       return pairs;
     }
 
-    function renderMatch() {
+    async function publishCurrentMatch() {
       if (currentMatchIndex >= currentMatches.length) {
         if (nextRoundWinners.length === 1) {
-          showFinalWinner(nextRoundWinners[0]);
+          // KONIEC TURNIEJU
+          const winner = nextRoundWinners[0];
+          await db.from('match_state').update({
+            is_finished: true,
+            winner_title: winner.title,
+            winner_author: winner.author
+          }).eq('id', 1);
           return;
         }
-        
         roundNumber++;
         currentMatches = createNextRoundPairs(nextRoundWinners);
         nextRoundWinners = [];
         currentMatchIndex = 0;
       }
 
-      document.getElementById('round-title').innerText = `Runda ${roundNumber} - Pojedynek ${currentMatchIndex + 1}/${currentMatches.length}`;
-      
       const pair = currentMatches[currentMatchIndex];
-      
       if (pair[1].isBye) {
         nextRoundWinners.push(pair[0]);
         currentMatchIndex++;
-        renderMatch();
+        publishCurrentMatch();
         return;
       }
 
-      document.getElementById('btn1').innerText = pair[0].title;
-      document.getElementById('btn2').innerText = pair[1].title;
-    }
+      // Czyszczenie poprzednich głosów
+      await db.from('votes').delete().neq('id', 0);
 
-    function selectWinner(index) {
-      const winner = currentMatches[currentMatchIndex][index];
-      nextRoundWinners.push(winner);
-      currentMatchIndex++;
-      renderMatch();
+      // Zapisujemy nowy stan pojedynku do bazy
+      await db.from('match_state').update({
+        title_a: pair[0].title,
+        title_b: pair[1].title,
+        round_info: `Runda ${roundNumber} - Pojedynek ${currentMatchIndex + 1}/${currentMatches.length}`,
+        is_active: true
+      }).eq('id', 1);
+
+      listenToVotes();
     }
 
     function createNextRoundPairs(winners) {
       let shuffled = [...winners].sort(() => Math.random() - 0.5);
       let pairs = [];
-
       while (shuffled.length > 1) {
         pairs.push([shuffled.shift(), shuffled.shift()]);
       }
@@ -198,12 +230,116 @@
       return pairs;
     }
 
-    function showFinalWinner(winnerObj) {
-      finalWinnerObj = winnerObj;
-      document.getElementById('tournament-section').classList.add('hidden');
-      document.getElementById('winner-section').classList.remove('hidden');
-      document.getElementById('winner-name').innerText = winnerObj.title;
-      document.getElementById('winner-author').innerText = winnerObj.author;
+    // NASŁUCHIWANIE GŁOSÓW DLA PROWADZĄCEGO
+    function listenToVotes() {
+      db.channel('votes-channel')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'votes' }, () => {
+          updateVoteCounts();
+        })
+        .subscribe();
+      updateVoteCounts();
+    }
+
+    async function updateVoteCounts() {
+      const pair = currentMatches[currentMatchIndex];
+      const { data } = await db.from('votes').select('chosen_title');
+      
+      let countA = 0;
+      let countB = 0;
+
+      if (data) {
+        countA = data.filter(v => v.chosen_title === pair[0].title).length;
+        countB = data.filter(v => v.chosen_title === pair[1].title).length;
+      }
+
+      const total = countA + countB || 1;
+      const percentA = Math.round((countA / total) * 100);
+      const percentB = 100 - percentA;
+
+      document.getElementById('admin-round').innerText = `Runda ${roundNumber} - Pojedynek ${currentMatchIndex + 1}/${currentMatches.length}`;
+      document.getElementById('admin-match-title').innerText = `${pair[0].title} VS ${pair[1].title}`;
+      document.getElementById('label-a').innerText = `${pair[0].title}: ${countA} głosów`;
+      document.getElementById('label-b').innerText = `${pair[1].title}: ${countB} głosów`;
+
+      document.getElementById('bar-a').style.width = `${percentA}%`;
+      document.getElementById('bar-a').innerText = countA > 0 ? `${countA}` : '';
+      document.getElementById('bar-b').style.width = `${percentB}%`;
+      document.getElementById('bar-b').innerText = countB > 0 ? `${countB}` : '';
+    }
+
+    async function nextMatch() {
+      const pair = currentMatches[currentMatchIndex];
+      const { data } = await db.from('votes').select('chosen_title');
+      
+      let countA = data ? data.filter(v => v.chosen_title === pair[0].title).length : 0;
+      let countB = data ? data.filter(v => v.chosen_title === pair[1].title).length : 0;
+
+      // W przypadku remisu losujemy
+      let winner = (countA > countB) ? pair[0] : (countB > countA) ? pair[1] : (Math.random() > 0.5 ? pair[0] : pair[1]);
+
+      nextRoundWinners.push(winner);
+      currentMatchIndex++;
+      publishCurrentMatch();
+    }
+
+    // NASŁUCHIWANIE DLA UCZESTNIKÓW (TELEFONY)
+    function listenToStateChanges() {
+      db.channel('state-channel')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_state' }, payload => {
+          handleStateUpdate(payload.new);
+        })
+        .subscribe();
+
+      // Pierwszy odczyt
+      db.from('match_state').select('*').eq('id', 1).single().then(({ data }) => {
+        if (data) handleStateUpdate(data);
+      });
+    }
+
+    function handleStateUpdate(state) {
+      if (isAdmin) return; // Prowadzący ma własny widok
+
+      if (state.is_finished) {
+        document.getElementById('form-section').classList.add('hidden');
+        document.getElementById('waiting-section').classList.add('hidden');
+        document.getElementById('voter-section').classList.add('hidden');
+        document.getElementById('winner-section').classList.remove('hidden');
+        document.getElementById('winner-name').innerText = state.winner_title;
+        document.getElementById('winner-author').innerText = state.winner_author;
+        return;
+      }
+
+      if (state.is_active) {
+        // Jeśli zmienił się pojedynek, odblokowujemy przyciski głosowania
+        if (!currentMatchState || currentMatchState.title_a !== state.title_a || currentMatchState.title_b !== state.title_b) {
+          hasVotedCurrentMatch = false;
+          document.getElementById('voted-msg').classList.add('hidden');
+          document.getElementById('vote-btn-a').disabled = false;
+          document.getElementById('vote-btn-b').disabled = false;
+        }
+
+        currentMatchState = state;
+        document.getElementById('form-section').classList.add('hidden');
+        document.getElementById('waiting-section').classList.add('hidden');
+        document.getElementById('voter-section').classList.remove('hidden');
+
+        document.getElementById('voter-round').innerText = state.round_info;
+        document.getElementById('vote-btn-a').innerText = state.title_a;
+        document.getElementById('vote-btn-b').innerText = state.title_b;
+      }
+    }
+
+    async function castVote(option) {
+      if (hasVotedCurrentMatch) return;
+
+      const chosenTitle = option === 'A' ? currentMatchState.title_a : currentMatchState.title_b;
+      
+      hasVotedCurrentMatch = true;
+      document.getElementById('vote-btn-a').disabled = true;
+      document.getElementById('vote-btn-b').disabled = true;
+      document.getElementById('voted-msg').classList.remove('hidden');
+
+      await db.from('votes').insert([{ chosen_title: chosenTitle }]);
     }
 
     function revealAuthor() {
