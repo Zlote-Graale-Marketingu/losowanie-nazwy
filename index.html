@@ -10,15 +10,29 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-color: #0b071e;
-      --card-bg: #150f33;
-      --card-border: #292053;
-      --accent-lime: #bfff00;
-      --accent-lime-hover: #a3d900;
-      --accent-magenta: #e02585;
-      --accent-purple: #7000ff;
-      --text-main: #ffffff;
-      --text-muted: #a5a1c9;
+      /* Zdefiniowana Paleta Kolorów */
+      --c-czerwony: rgb(233, 103, 48);
+      --c-zielony: rgb(74, 166, 30);
+      --c-rozowy: rgb(234, 85, 154);
+      --c-niebieski: rgb(0, 114, 188);
+      --c-zolty: rgb(235, 171, 33);
+      --c-fioletowy: rgb(156, 95, 176);
+      --c-szary: rgb(233, 213, 198);
+      --c-czern: rgb(0, 0, 0);
+      --c-biel: rgb(255, 255, 255);
+
+      /* Przypisanie motywu aplikacji */
+      --bg-color: #080612;
+      --card-bg: #130d28;
+      --card-border: #271c4d;
+      
+      --accent-main: var(--c-zielony);
+      --accent-main-hover: rgb(62, 140, 25);
+      --accent-secondary: var(--c-niebieski);
+      --accent-pink: var(--c-rozowy);
+      
+      --text-main: var(--c-biel);
+      --text-muted: var(--c-szary);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -32,13 +46,13 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      background-image: radial-gradient(circle at top right, rgba(112, 0, 255, 0.15), transparent 40%),
-                        radial-gradient(circle at bottom left, rgba(191, 255, 0, 0.1), transparent 40%);
+      background-image: radial-gradient(circle at top right, rgba(0, 114, 188, 0.2), transparent 45%),
+                        radial-gradient(circle at bottom left, rgba(74, 166, 30, 0.15), transparent 45%);
     }
 
     .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     .brand-logo { font-size: 20px; font-weight: 800; color: var(--text-main); text-decoration: none; letter-spacing: -0.03em; }
-    .brand-logo span { color: var(--accent-lime); }
+    .brand-logo span { color: var(--accent-main); }
 
     .card { 
       background: var(--card-bg); 
@@ -57,7 +71,7 @@
       width: 100%; 
       padding: 16px; 
       margin: 10px 0; 
-      background: #0b071e; 
+      background: var(--bg-color); 
       border: 1px solid var(--card-border); 
       color: var(--text-main); 
       border-radius: 14px; 
@@ -65,7 +79,7 @@
       outline: none;
       transition: all 0.2s;
     }
-    input:focus { border-color: var(--accent-lime); box-shadow: 0 0 0 2px rgba(191, 255, 0, 0.2); }
+    input:focus { border-color: var(--accent-main); box-shadow: 0 0 0 2px rgba(74, 166, 30, 0.25); }
 
     button { 
       width: 100%; 
@@ -77,21 +91,21 @@
       border: none; 
       cursor: pointer; 
       transition: all 0.2s ease;
-      background: var(--accent-lime); 
-      color: #0b071e; 
+      background: var(--accent-main); 
+      color: var(--text-main); 
       text-transform: uppercase;
       letter-spacing: 0.02em;
     }
-    button:hover { background: var(--accent-lime-hover); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(191, 255, 0, 0.25); }
+    button:hover { background: var(--accent-main-hover); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(74, 166, 30, 0.3); }
     
     .btn-secondary { background: #22184c; color: var(--text-main); border: 1px solid var(--card-border); }
     .btn-secondary:hover { background: #2f2366; }
-    .btn-danger { background: #ef4444; color: white; }
-    .btn-danger:hover { background: #dc2626; }
-    .btn-warning { background: #f59e0b; color: #0b071e; }
-    .btn-warning:hover { background: #d97706; }
-    .btn-magenta { background: var(--accent-magenta); color: white; }
-    .btn-magenta:hover { background: #c2186e; }
+    .btn-danger { background: var(--c-czerwony); color: white; }
+    .btn-danger:hover { opacity: 0.9; }
+    .btn-warning { background: var(--c-zolty); color: var(--c-czern); }
+    .btn-warning:hover { opacity: 0.9; }
+    .btn-pink { background: var(--accent-pink); color: white; }
+    .btn-pink:hover { opacity: 0.9; }
 
     .vote-box { display: flex; gap: 16px; margin-top: 24px; }
     .vote-btn { 
@@ -101,16 +115,16 @@
       font-weight: 800; 
       word-break: break-word; 
       border-radius: 18px;
-      background: #0b071e;
+      background: var(--bg-color);
       color: var(--text-main);
       border: 2px solid var(--card-border);
       text-transform: none;
     }
-    .vote-btn:hover { border-color: var(--accent-lime); background: #150f33; color: var(--accent-lime); }
-    .vote-btn-b:hover { border-color: var(--accent-magenta); color: var(--accent-magenta); }
+    .vote-btn:hover { border-color: var(--accent-main); background: var(--card-bg); color: var(--accent-main); }
+    .vote-btn-b:hover { border-color: var(--accent-secondary); color: var(--accent-secondary); }
 
     .progress-bar-container { 
-      background: #0b071e; 
+      background: var(--bg-color); 
       border-radius: 14px; 
       overflow: hidden; 
       margin: 20px 0 10px 0; 
@@ -118,13 +132,13 @@
       height: 44px; 
       border: 1px solid var(--card-border);
     }
-    .progress-a { background: var(--accent-lime); color: #0b071e; display: flex; align-items: center; justify-content: center; font-weight: 800; transition: width 0.4s ease; }
-    .progress-b { background: var(--accent-magenta); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; transition: width 0.4s ease; }
+    .progress-a { background: var(--accent-main); color: var(--text-main); display: flex; align-items: center; justify-content: center; font-weight: 800; transition: width 0.4s ease; }
+    .progress-b { background: var(--accent-secondary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; transition: width 0.4s ease; }
     
     .badge { 
-      background: rgba(191, 255, 0, 0.12); 
-      color: var(--accent-lime); 
-      border: 1px solid rgba(191, 255, 0, 0.3);
+      background: rgba(74, 166, 30, 0.15); 
+      color: var(--accent-main); 
+      border: 1px solid rgba(74, 166, 30, 0.3);
       padding: 6px 16px; 
       border-radius: 20px; 
       font-size: 13px; 
@@ -134,7 +148,7 @@
       letter-spacing: 0.05em;
     }
     .admin-link { background: transparent; color: var(--text-muted); border: 1px solid var(--card-border); width: auto; padding: 6px 14px; font-size: 13px; font-weight: 700; margin: 0; text-transform: none; }
-    .admin-link:hover { color: var(--text-main); border-color: var(--accent-lime); }
+    .admin-link:hover { color: var(--text-main); border-color: var(--accent-main); }
     
     .hidden { display: none; }
     hr { border: none; border-top: 1px solid var(--card-border); margin: 24px 0; }
@@ -156,7 +170,7 @@
     <input type="text" id="name1" placeholder="Pierwsza nazwa" required>
     <input type="text" id="name2" placeholder="Druga nazwa" required>
     <button onclick="submitNames()">Wyślij zgłoszenie</button>
-    <p id="msg" style="color: var(--accent-lime); font-weight: bold; margin-top: 10px;"></p>
+    <p id="msg" style="color: var(--accent-main); font-weight: bold; margin-top: 10px;"></p>
   </div>
 
   <!-- EKRAN OCZEKIWANIA NA START TURNIEJU -->
@@ -173,7 +187,7 @@
       <button id="vote-btn-a" class="vote-btn" onclick="castVote('A')"></button>
       <button id="vote-btn-b" class="vote-btn vote-btn-b" onclick="castVote('B')"></button>
     </div>
-    <p id="voted-msg" class="hidden" style="color: var(--accent-lime); font-weight: bold; margin-top: 20px;">
+    <p id="voted-msg" class="hidden" style="color: var(--accent-main); font-weight: bold; margin-top: 20px;">
       ✅ Twój głos został zarejestrowany! Czekaj na kolejny pojedynek.
     </p>
   </div>
@@ -198,11 +212,11 @@
     </div>
     
     <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 20px; font-size: 14px;">
-      <span id="label-a" style="color: var(--accent-lime);">-</span>
-      <span id="label-b" style="color: var(--accent-magenta);">-</span>
+      <span id="label-a" style="color: var(--accent-main);">-</span>
+      <span id="label-b" style="color: var(--accent-secondary);">-</span>
     </div>
 
-    <button onclick="nextMatch()" class="btn-magenta">Zakończ głosowanie i przejdź dalej ➔</button>
+    <button onclick="nextMatch()" class="btn-pink">Zakończ głosowanie i przejdź dalej ➔</button>
     <hr>
     <button onclick="stopVotingAndReturnToForm()" class="btn-secondary">🛑 Zakończ głosowanie i otwórz zgłoszenia</button>
     <button onclick="restartTournament()" class="btn-warning">🔄 Ponów losowanie z obecnych nazw</button>
@@ -212,11 +226,11 @@
   <!-- WYNIK FINALNY -->
   <div id="winner-section" class="card hidden">
     <h2>🏆 Zwycięska Nazwa 🏆</h2>
-    <h1 id="winner-name" style="color: var(--accent-lime); font-size: 32px; margin: 16px 0;"></h1>
+    <h1 id="winner-name" style="color: var(--accent-main); font-size: 32px; margin: 16px 0;"></h1>
     <div id="author-box" class="hidden" style="margin-top: 16px; font-size: 18px; color: var(--text-muted);">
       Autor propozycji: <strong id="winner-author" style="color: var(--text-main);"></strong>
     </div>
-    <button id="reveal-btn" onclick="revealAuthor()" class="btn-magenta" style="margin-top: 24px;">🔍 Odkryj autora nazwy</button>
+    <button id="reveal-btn" onclick="revealAuthor()" class="btn-pink" style="margin-top: 24px;">🔍 Odkryj autora nazwy</button>
   </div>
 
   <script>
