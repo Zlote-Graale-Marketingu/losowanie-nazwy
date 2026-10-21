@@ -150,6 +150,15 @@
     .admin-link { background: transparent; color: var(--text-muted); border: 1px solid var(--card-border); width: auto; padding: 6px 14px; font-size: 13px; font-weight: 700; margin: 0; text-transform: none; }
     .admin-link:hover { color: var(--text-main); border-color: var(--accent-main); }
     
+    /* Sekcja rozstrzygania remisu */
+    .tie-breaker-box {
+      background: rgba(235, 171, 33, 0.1);
+      border: 1px solid var(--c-zolty);
+      border-radius: 16px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+
     .hidden { display: none; }
     hr { border: none; border-top: 1px solid var(--card-border); margin: 24px 0; }
   </style>
@@ -216,6 +225,15 @@
       <span id="label-b" style="color: var(--accent-secondary);">-</span>
     </div>
 
+    <!-- SEKCJA ROZSTRZYGANIA REMISU DLA PROWADZĄCEGO -->
+    <div id="tie-breaker-section" class="tie-breaker-box hidden">
+      <p style="color: var(--c-zolty); font-weight: bold; margin-bottom: 10px;">⚖️ Remis! Dodaj decydujący głos prowadzącego:</p>
+      <div style="display: flex; gap: 10px;">
+        <button id="tie-btn-a" onclick="addAdminVote('A')" class="btn-warning" style="margin:0; font-size: 13px;"></button>
+        <button id="tie-btn-b" onclick="addAdminVote('B')" class="btn-warning" style="margin:0; font-size: 13px;"></button>
+      </div>
+    </div>
+
     <button onclick="nextMatch()" class="btn-pink">Zakończ głosowanie i przejdź dalej ➔</button>
     <hr>
     <button onclick="stopVotingAndReturnToForm()" class="btn-secondary">🛑 Zakończ głosowanie i otwórz zgłoszenia</button>
@@ -259,6 +277,27 @@
 
       if(!user || !name1 || !name2) return alert("Wypełnij wszystkie pola!");
 
+      document.getElementById('msg').innerText = "Sprawdzanie danych...";
+
+      // 1. BLOKADA WIELOKROTNEGO ZGŁOSZENIA NA TO SAMO IMIĘ I NAZWISKO
+      const { data: existingUser, error: checkError } = await db
+        .from('items')
+        .select('author')
+        .ilike('author', user);
+
+      if (checkError) {
+        alert("Błąd podczas weryfikacji użytkownika: " + checkError.message);
+        document.getElementById('msg').innerText = "";
+        return;
+      }
+
+      if (existingUser && existingUser.length > 0) {
+        alert("Osoba o tym imieniu i nazwisku zdążyła już dodać swoje propozycje!");
+        document.getElementById('msg').innerText = "Wyszukiwanie zgłoszenia: Wykryto podwójne dane!";
+        return;
+      }
+
+      // 2. REJESTRACJA PROPOZYCJI
       const { error } = await db.from('items').insert([
         { author: user, title: name1 },
         { author: user, title: name2 }
@@ -266,6 +305,7 @@
 
       if (error) {
         alert("Błąd zapisu: " + error.message);
+        document.getElementById('msg').innerText = "";
       } else {
         document.getElementById('msg').innerText = "Zgłoszenie zostało zapisane!";
         document.getElementById('user').value = '';
@@ -489,6 +529,26 @@
       document.getElementById('bar-a').innerText = countA > 0 ? `${countA}` : '';
       document.getElementById('bar-b').style.width = `${percentB}%`;
       document.getElementById('bar-b').innerText = countB > 0 ? `${countB}` : '';
+
+      // Pokazywanie/ukrywanie sekcji dodawania dodatkowego głosu przy remisie
+      const tieBreakerSec = document.getElementById('tie-breaker-section');
+      if (countA === countB) {
+        tieBreakerSec.classList.remove('hidden');
+        document.getElementById('tie-btn-a').innerText = `+1 dla "${stateData.title_a}"`;
+        document.getElementById('tie-btn-b').innerText = `+1 dla "${stateData.title_b}"`;
+      } else {
+        tieBreakerSec.classList.add('hidden');
+      }
+    }
+
+    // DODAWANIE GŁOSU ROZSTRZYGAJĄCEGO PRZEZ PROWADZĄCEGO
+    async function addAdminVote(option) {
+      if (!currentMatches[currentMatchIndex]) return;
+      const pair = currentMatches[currentMatchIndex];
+      const chosenTitle = option === 'A' ? pair[0].title : pair[1].title;
+
+      await db.from('votes').insert([{ chosen_title: chosenTitle }]);
+      updateVoteCounts();
     }
 
     async function nextMatch() {
@@ -508,8 +568,9 @@
       } else if (countB > countA) {
         nextRoundWinners.push(pair[1]);
       } else {
-        nextRoundWinners.push(pair[0]);
-        nextRoundWinners.push(pair[1]);
+        // Remis - prośba do prowadzącego o rozstrzygnięcie
+        alert("Jest remis! Wykorzystaj przyciski 'Rozstrzygnięcie remisu', aby oddać decydujący głos przed przejściem dalej.");
+        return;
       }
 
       currentMatchIndex++;
