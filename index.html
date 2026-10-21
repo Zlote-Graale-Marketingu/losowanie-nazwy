@@ -196,10 +196,10 @@
     <!-- Licznik zgłoszeń na żywo -->
     <div class="counter-box">🧺 Propozycji w bębnie: <span id="items-count">0</span></div>
 
-    <p style="margin-bottom: 16px;">Wpisz swoje imię i nazwisko oraz wyślij 2 pachnące świeżością nazwy do turnieju.</p>
-    <input type="text" id="user" placeholder="Imię i Nazwisko" required>
-    <input type="text" id="name1" placeholder="Pierwsza świeża nazwa" required>
-    <input type="text" id="name2" placeholder="Druga świeża nazwa" required>
+    <p style="margin-bottom: 16px;">Wpisz swoje imię i nazwisko oraz wyślij przynajmniej jedną świeżą nazwę do turnieju.</p>
+    <input type="text" id="user" placeholder="Imię i Nazwisko *" required>
+    <input type="text" id="name1" placeholder="Pierwsza świeża nazwa">
+    <input type="text" id="name2" placeholder="Druga świeża nazwa (opcjonalnie)">
     <button onclick="submitNames()">Wypierz i wyślij zgłoszenie 🧺</button>
     <p id="msg" style="color: var(--c-zielony); font-weight: bold; margin-top: 10px;"></p>
   </div>
@@ -333,7 +333,6 @@
       listenToItemsChanges();
     };
 
-    // LICZNIK PROPOZYCJI NA ŻYWO
     async function updateItemsCounter() {
       const { count } = await db.from('items').select('*', { count: 'exact', head: true });
       document.getElementById('items-count').innerText = count || 0;
@@ -352,7 +351,8 @@
       const name1 = document.getElementById('name1').value.trim();
       const name2 = document.getElementById('name2').value.trim();
 
-      if(!user || !name1 || !name2) return alert("Wypełnij wszystkie pola przed wypraniem nazw!");
+      if (!user) return alert("Podanie Imienia i Nazwiska jest obowiązkowe!");
+      if (!name1 && !name2) return alert("Wpisz przynajmniej jedną propozycję nazwy!");
 
       document.getElementById('msg').innerText = "Sprawdzanie bębna...";
 
@@ -368,15 +368,16 @@
       }
 
       if (existingUser && existingUser.length > 0) {
-        alert("Prawdziwa świeżość to unikalność! Osoba o tym imieniu i nazwisku już dodała swoje propozycje.");
+        alert("Osoba o tym imieniu i nazwisku już dodała swoje propozycje.");
         document.getElementById('msg').innerText = "Wykryto powtórzenie imienia i nazwiska!";
         return;
       }
 
-      const { error } = await db.from('items').insert([
-        { author: user, title: name1 },
-        { author: user, title: name2 }
-      ]);
+      const itemsToInsert = [];
+      if (name1) itemsToInsert.push({ author: user, title: name1 });
+      if (name2) itemsToInsert.push({ author: user, title: name2 });
+
+      const { error } = await db.from('items').insert(itemsToInsert);
 
       if (error) {
         alert("Błąd zapisu: " + error.message);
@@ -426,11 +427,8 @@
         return;
       }
 
-      if (currentMatches.length === 0) {
-        initNewTournament(data);
-      } else {
-        updateVoteCounts();
-      }
+      // Zawsze inicjuj nowe losowanie po wejściu do panelu, jeśli baza zawierała null
+      initNewTournament(data);
     }
 
     function initNewTournament(data) {
@@ -444,7 +442,6 @@
       publishCurrentMatch();
     }
 
-    // TWORZENIE PAR Z WOLNYM LOSEM (NIEPARZYSTE DANE)
     function pairInitialItems(items) {
       let shuffled = [...items].sort(() => Math.random() - 0.5);
       let pairs = [];
@@ -521,7 +518,6 @@
       listenToVotes();
     }
 
-    // TIMING 30 SEKUND
     async function start30sTimer() {
       const endsAt = Date.now() + 30000;
       await db.from('match_state').update({ timer_ends_at: endsAt }).eq('id', 1);
@@ -563,14 +559,17 @@
       const { data: stateData } = await db.from('match_state').select('*').eq('id', 1).single();
       if (!stateData) return;
 
+      const titleA = stateData.title_a || "Brak nazwy";
+      const titleB = stateData.title_b || "Brak nazwy";
+
       const { data: votesData } = await db.from('votes').select('chosen_title');
       
       let countA = 0;
       let countB = 0;
 
       if (votesData) {
-        countA = votesData.filter(v => v.chosen_title === stateData.title_a).length;
-        countB = votesData.filter(v => v.chosen_title === stateData.title_b).length;
+        countA = votesData.filter(v => v.chosen_title === titleA).length;
+        countB = votesData.filter(v => v.chosen_title === titleB).length;
       }
 
       const total = countA + countB;
@@ -579,9 +578,9 @@
       const percentB = 100 - percentA;
 
       document.getElementById('admin-round').innerText = stateData.round_info || 'Runda 1';
-      document.getElementById('admin-match-title').innerText = `${stateData.title_a} VS ${stateData.title_b}`;
-      document.getElementById('label-a').innerText = `${stateData.title_a}: ${countA} głosów`;
-      document.getElementById('label-b').innerText = `${stateData.title_b}: ${countB} głosów`;
+      document.getElementById('admin-match-title').innerText = `${titleA} VS ${titleB}`;
+      document.getElementById('label-a').innerText = `${titleA}: ${countA} głosów`;
+      document.getElementById('label-b').innerText = `${titleB}: ${countB} głosów`;
       document.getElementById('total-votes-count').innerText = total;
 
       document.getElementById('bar-a').style.width = `${percentA}%`;
@@ -590,10 +589,10 @@
       document.getElementById('bar-b').innerText = countB > 0 ? `${countB}` : '';
 
       const tieBreakerSec = document.getElementById('tie-breaker-section');
-      if (countA === countB) {
+      if (countA === countB && titleA !== "Brak nazwy") {
         tieBreakerSec.classList.remove('hidden');
-        document.getElementById('tie-btn-a').innerText = `+1 głos dla "${stateData.title_a}"`;
-        document.getElementById('tie-btn-b').innerText = `+1 głos dla "${stateData.title_b}"`;
+        document.getElementById('tie-btn-a').innerText = `+1 głos dla "${titleA}"`;
+        document.getElementById('tie-btn-b').innerText = `+1 głos dla "${titleB}"`;
       } else {
         tieBreakerSec.classList.add('hidden');
       }
@@ -610,7 +609,10 @@
 
     async function nextMatch() {
       if (currentMatches.length === 0) {
-        alert("Brak aktywnych pojedynków.");
+        // Zabezpieczenie: Jeśli drabina wygasła, zbuduj ją ponownie z bazy
+        const { data } = await db.from('items').select('*');
+        if (!data || data.length < 2) return alert("Za mało nazw w bazie!");
+        initNewTournament(data);
         return;
       }
 
@@ -647,7 +649,6 @@
       document.getElementById('admin-reveal-author-btn').classList.add('hidden');
     }
 
-    // KOD QR
     function showQRCode() {
       const qrContainer = document.getElementById('qrcode-container');
       qrContainer.innerHTML = '';
@@ -686,7 +687,7 @@
         return;
       }
 
-      if (state.is_active) {
+      if (state.is_active && state.title_a && state.title_b) {
         if (!currentMatchState || currentMatchState.title_a !== state.title_a || currentMatchState.title_b !== state.title_b) {
           hasVotedCurrentMatch = false;
           document.getElementById('voted-msg').classList.add('hidden');
@@ -757,9 +758,8 @@
     }
 
     async function restartTournament() {
-      if (!confirm("Ponowić losowanie z obecnych nazw?")) return;
       const { data } = await db.from('items').select('*');
-      if (!data || data.length < 2) return alert("Za mało nazw!");
+      if (!data || data.length < 2) return alert("Za mało nazw w bazie (min. 2)!");
       initNewTournament(data);
     }
 
