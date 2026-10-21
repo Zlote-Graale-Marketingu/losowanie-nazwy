@@ -196,10 +196,10 @@
     <!-- Licznik zgłoszeń na żywo -->
     <div class="counter-box">🧺 Propozycji w bębnie: <span id="items-count">0</span></div>
 
-    <p style="margin-bottom: 16px;">Wpisz swoje imię i nazwisko oraz wyślij przynajmniej jedną świeżą nazwę do turnieju.</p>
-    <input type="text" id="user" placeholder="Imię i Nazwisko *" required>
-    <input type="text" id="name1" placeholder="Pierwsza świeża nazwa">
-    <input type="text" id="name2" placeholder="Druga świeża nazwa (opcjonalnie)">
+    <p style="margin-bottom: 16px;">Wpisz swoje imię i nazwisko oraz wyślij 2 pachnące świeżością nazwy do turnieju.</p>
+    <input type="text" id="user" placeholder="Imię i Nazwisko" required>
+    <input type="text" id="name1" placeholder="Pierwsza świeża nazwa" required>
+    <input type="text" id="name2" placeholder="Druga świeża nazwa" required>
     <button onclick="submitNames()">Wypierz i wyślij zgłoszenie 🧺</button>
     <p id="msg" style="color: var(--c-zielony); font-weight: bold; margin-top: 10px;"></p>
   </div>
@@ -352,13 +352,10 @@
       const name1 = document.getElementById('name1').value.trim();
       const name2 = document.getElementById('name2').value.trim();
 
-      // WALIDACJA: Imię i Nazwisko jest wymagane oraz Przynajmniej jedna nazwa
-      if (!user) return alert("Podanie Imienia i Nazwiska jest obowiązkowe!");
-      if (!name1 && !name2) return alert("Wpisz przynajmniej jedną propozycję nazwy!");
+      if(!user || !name1 || !name2) return alert("Wypełnij wszystkie pola przed wypraniem nazw!");
 
       document.getElementById('msg').innerText = "Sprawdzanie bębna...";
 
-      // WERYFIKACJA UNIKALNOŚCI UŻYTKOWNIKA
       const { data: existingUser, error: checkError } = await db
         .from('items')
         .select('author')
@@ -376,12 +373,10 @@
         return;
       }
 
-      // TWORZENIE REKORDÓW DLA WYPEŁNIONYCH POL
-      const itemsToInsert = [];
-      if (name1) itemsToInsert.push({ author: user, title: name1 });
-      if (name2) itemsToInsert.push({ author: user, title: name2 });
-
-      const { error } = await db.from('items').insert(itemsToInsert);
+      const { error } = await db.from('items').insert([
+        { author: user, title: name1 },
+        { author: user, title: name2 }
+      ]);
 
       if (error) {
         alert("Błąd zapisu: " + error.message);
