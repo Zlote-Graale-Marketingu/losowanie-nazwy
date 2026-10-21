@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Turniej Świeżych Nazw | Robimy Social Media</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Generator Kodu QR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,800&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* Nowy branding RSM - Paleta Świeżości */
+      /* Branding RSM */
       --c-zielony: #4aa61e;
       --c-zielony-hover: #3d8a18;
       --c-niebieski: #0072bc;
@@ -100,7 +102,7 @@
     .btn-pink { background: var(--c-rozowy); color: white; }
     .btn-pink:hover { background: var(--c-rozowy-hover); }
 
-    .vote-box { display: flex; gap: 16px; margin-top: 24px; }
+    .vote-box { display: flex; gap: 16px; margin-top: 20px; }
     .vote-btn { 
       flex: 1; 
       padding: 24px 16px; 
@@ -140,6 +142,27 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
+    
+    .timer-badge {
+      background: rgba(234, 85, 154, 0.15);
+      color: var(--c-rozowy);
+      border: 1px solid rgba(234, 85, 154, 0.3);
+      font-size: 16px;
+      padding: 8px 18px;
+      margin-top: 10px;
+    }
+
+    .counter-box {
+      background: rgba(0, 114, 188, 0.1);
+      border: 1px solid rgba(0, 114, 188, 0.3);
+      color: var(--c-niebieski);
+      padding: 10px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
     .admin-link { background: transparent; color: var(--text-muted); border: 1px solid var(--card-border); width: auto; padding: 6px 14px; font-size: 13px; font-weight: 700; margin: 0; text-transform: none; }
     .admin-link:hover { color: var(--text-main); border-color: var(--c-zielony); }
     
@@ -150,6 +173,8 @@
       padding: 16px;
       margin: 16px 0;
     }
+
+    #qrcode-container img { margin: 0 auto; border: 8px solid #fff; border-radius: 12px; }
 
     .hidden { display: none; }
     hr { border: none; border-top: 1px solid var(--card-border); margin: 24px 0; }
@@ -167,7 +192,11 @@
   <div id="form-section" class="card">
     <span class="badge">🧼 Program Główny</span>
     <h2 style="margin-top: 12px;">Wrzuć propozycje do bębna!</h2>
-    <p style="margin-bottom: 20px;">Wpisz swoje imię i nazwisko oraz wyślij 2 pachnące świeżością nazwy do turnieju.</p>
+    
+    <!-- Licznik zgłoszeń na żywo -->
+    <div class="counter-box">🧺 Propozycji w bębnie: <span id="items-count">0</span></div>
+
+    <p style="margin-bottom: 16px;">Wpisz swoje imię i nazwisko oraz wyślij 2 pachnące świeżością nazwy do turnieju.</p>
     <input type="text" id="user" placeholder="Imię i Nazwisko" required>
     <input type="text" id="name1" placeholder="Pierwsza świeża nazwa" required>
     <input type="text" id="name2" placeholder="Druga świeża nazwa" required>
@@ -184,6 +213,10 @@
   <!-- PANEL DLA UCZESTNIKA (GŁOSOWANIE) -->
   <div id="voter-section" class="card hidden">
     <span id="voter-round" class="badge">Runda 1</span>
+    
+    <!-- Odliczanie zegara dla głosującego -->
+    <div id="voter-timer" class="badge timer-badge hidden">⏱️ Czas: <span id="voter-timer-sec">30</span>s</div>
+
     <h2 style="margin-top: 16px;">Która nazwa ma większą świeżość?</h2>
     <div class="vote-box">
       <button id="vote-btn-a" class="vote-btn" onclick="castVote('A')"></button>
@@ -191,6 +224,9 @@
     </div>
     <p id="voted-msg" class="hidden" style="color: var(--c-zielony); font-weight: bold; margin-top: 20px;">
       ✅ Twój głos poleciał do bębna! Czekaj na kolejny pojedynek.
+    </p>
+    <p id="timer-expired-msg" class="hidden" style="color: var(--c-czerwony); font-weight: bold; margin-top: 20px;">
+      ⏳ Czas na głosowanie w tym pojedynku dobiegł końca!
     </p>
   </div>
 
@@ -223,9 +259,14 @@
         <div id="bar-b" class="progress-b" style="width: 50%;">0</div>
       </div>
       
-      <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 20px; font-size: 14px;">
+      <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 12px; font-size: 14px;">
         <span id="label-a" style="color: var(--c-zielony);">-</span>
         <span id="label-b" style="color: var(--c-niebieski);">-</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <span style="font-size: 13px; color: var(--text-muted);">Łącznie głosów: <strong id="total-votes-count" style="color: #fff;">0</strong></span>
+        <button onclick="start30sTimer()" class="btn-warning" style="width: auto; padding: 6px 14px; font-size: 12px; margin: 0;">⏱️ Włącz Timer 30s</button>
       </div>
 
       <!-- SEKCJA ROZSTRZYGANIA REMISU -->
@@ -257,9 +298,17 @@
     </div>
 
     <hr>
+    <button onclick="showQRCode()" class="btn-secondary">📱 Pokaż Kod QR do dołączenia</button>
     <button onclick="stopVotingAndReturnToForm()" class="btn-secondary">🛑 Zakończ głosowanie i otwórz wrzucanie nazw</button>
     <button onclick="restartTournament()" class="btn-warning">🔄 Ponów losowanie z obecnych nazw</button>
     <button onclick="fullResetApp()" class="btn-danger">🔥 Pełny reset (czyszczenie bazy i nazw)</button>
+  </div>
+
+  <!-- MODAL Z KODEM QR -->
+  <div id="qr-modal" class="card hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; width: 90%; max-width: 400px;">
+    <h2>Zeskanuj, aby dołączyć!</h2>
+    <div id="qrcode-container" style="margin: 20px 0;"></div>
+    <button onclick="closeQRCode()" class="btn-secondary">Zamknij Kod QR</button>
   </div>
 
   <script>
@@ -276,10 +325,27 @@
     let isAdmin = false;
     let hasVotedCurrentMatch = false;
     let currentMatchState = null;
+    let timerInterval = null;
 
     window.onload = () => {
       listenToStateChanges();
+      updateItemsCounter();
+      listenToItemsChanges();
     };
+
+    // LICZNIK PROPOZYCJI NA ŻYWO
+    async function updateItemsCounter() {
+      const { count } = await db.from('items').select('*', { count: 'exact', head: true });
+      document.getElementById('items-count').innerText = count || 0;
+    }
+
+    function listenToItemsChanges() {
+      db.channel('items-channel')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, () => {
+          updateItemsCounter();
+        })
+        .subscribe();
+    }
 
     async function submitNames() {
       const user = document.getElementById('user').value.trim();
@@ -378,62 +444,7 @@
       publishCurrentMatch();
     }
 
-    async function stopVotingAndReturnToForm() {
-      if (!confirm("Czy na pewno chcesz zakończyć aktywne głosowanie i przywrócić formularz zgłoszeń?")) return;
-
-      await db.from('votes').delete().neq('id', 0);
-      await db.from('match_state').update({
-        is_active: false,
-        is_finished: false,
-        title_a: null,
-        title_b: null,
-        winner_title: null,
-        winner_author: null,
-        round_info: null
-      }).eq('id', 1);
-
-      currentMatches = [];
-      currentMatchIndex = 0;
-      nextRoundWinners = [];
-      roundNumber = 1;
-
-      alert("Głosowanie wyłączone. Uczestnicy widzą formularz dodawania propozycji.");
-      location.reload();
-    }
-
-    async function restartTournament() {
-      if (!confirm("Czy na pewno chcesz ponowić losowanie z obecnych nazw?")) return;
-
-      const { data } = await db.from('items').select('*');
-      if (!data || data.length < 2) return alert("Za mało nazw w bazie!");
-
-      initNewTournament(data);
-    }
-
-    async function fullResetApp() {
-      if (!confirm("⚠️ Pełny reset! Spowoduje to wyczyszczenie całej bazy danych i usunięcie propozycji! Na pewno?")) return;
-
-      await db.from('votes').delete().neq('id', 0);
-      await db.from('items').delete().neq('id', 0);
-      await db.from('match_state').update({
-        is_active: false,
-        is_finished: false,
-        title_a: null,
-        title_b: null,
-        winner_title: null,
-        winner_author: null,
-        round_info: null
-      }).eq('id', 1);
-
-      currentMatches = [];
-      currentMatchIndex = 0;
-      nextRoundWinners = [];
-      roundNumber = 1;
-
-      alert("Aplikacja wyczyszczona na błysk! Można od nowa zbierać nazwy.");
-      location.reload();
-    }
-
+    // TWORZENIE PAR Z WOLNYM LOSEM (NIEPARZYSTE DANE)
     function pairInitialItems(items) {
       let shuffled = [...items].sort(() => Math.random() - 0.5);
       let pairs = [];
@@ -447,7 +458,19 @@
         }
       }
       if (shuffled.length === 1) {
-        pairs.push([shuffled[0], { title: "Wolny Los (Automatyczny awans)", isBye: true }]);
+        pairs.push([shuffled[0], { title: "Bilet Świeżości (Automatyczny awans)", isBye: true }]);
+      }
+      return pairs;
+    }
+
+    function createNextRoundPairs(winners) {
+      let shuffled = [...winners].sort(() => Math.random() - 0.5);
+      let pairs = [];
+      while (shuffled.length > 1) {
+        pairs.push([shuffled.shift(), shuffled.shift()]);
+      }
+      if (shuffled.length === 1) {
+        pairs.push([shuffled[0], { title: "Bilet Świeżości (Automatyczny awans)", isBye: true }]);
       }
       return pairs;
     }
@@ -463,7 +486,6 @@
             winner_author: winner.author
           }).eq('id', 1);
 
-          // Pokaż przycisk wygranej dla prowadzącego
           document.getElementById('admin-match-view').classList.add('hidden');
           document.getElementById('admin-finish-view').classList.remove('hidden');
           return;
@@ -491,23 +513,42 @@
         title_b: pair[1].title,
         round_info: roundText,
         is_active: true,
-        is_finished: false
+        is_finished: false,
+        timer_ends_at: null
       }).eq('id', 1);
 
       updateVoteCounts();
       listenToVotes();
     }
 
-    function createNextRoundPairs(winners) {
-      let shuffled = [...winners].sort(() => Math.random() - 0.5);
-      let pairs = [];
-      while (shuffled.length > 1) {
-        pairs.push([shuffled.shift(), shuffled.shift()]);
-      }
-      if (shuffled.length === 1) {
-        pairs.push([shuffled[0], { title: "Wolny Los (Automatyczny awans)", isBye: true }]);
-      }
-      return pairs;
+    // TIMING 30 SEKUND
+    async function start30sTimer() {
+      const endsAt = Date.now() + 30000;
+      await db.from('match_state').update({ timer_ends_at: endsAt }).eq('id', 1);
+    }
+
+    function runLocalTimer(endsAt) {
+      clearInterval(timerInterval);
+      const timerBox = document.getElementById('voter-timer');
+      const timerSec = document.getElementById('voter-timer-sec');
+      document.getElementById('timer-expired-msg').classList.add('hidden');
+
+      timerBox.classList.remove('hidden');
+
+      timerInterval = setInterval(() => {
+        const left = Math.ceil((endsAt - Date.now()) / 1000);
+        if (left <= 0) {
+          clearInterval(timerInterval);
+          timerSec.innerText = '0';
+          document.getElementById('vote-btn-a').disabled = true;
+          document.getElementById('vote-btn-b').disabled = true;
+          if (!hasVotedCurrentMatch) {
+            document.getElementById('timer-expired-msg').classList.remove('hidden');
+          }
+        } else {
+          timerSec.innerText = left;
+        }
+      }, 500);
     }
 
     function listenToVotes() {
@@ -532,14 +573,16 @@
         countB = votesData.filter(v => v.chosen_title === stateData.title_b).length;
       }
 
-      const total = countA + countB || 1;
-      const percentA = Math.round((countA / total) * 100);
+      const total = countA + countB;
+      const calcTotal = total || 1;
+      const percentA = Math.round((countA / calcTotal) * 100);
       const percentB = 100 - percentA;
 
       document.getElementById('admin-round').innerText = stateData.round_info || 'Runda 1';
       document.getElementById('admin-match-title').innerText = `${stateData.title_a} VS ${stateData.title_b}`;
       document.getElementById('label-a').innerText = `${stateData.title_a}: ${countA} głosów`;
       document.getElementById('label-b').innerText = `${stateData.title_b}: ${countB} głosów`;
+      document.getElementById('total-votes-count').innerText = total;
 
       document.getElementById('bar-a').style.width = `${percentA}%`;
       document.getElementById('bar-a').innerText = countA > 0 ? `${countA}` : '';
@@ -567,7 +610,7 @@
 
     async function nextMatch() {
       if (currentMatches.length === 0) {
-        alert("Brak aktywnych pojedynków. Użyj przycisków poniżej, aby rozpocząć turniej.");
+        alert("Brak aktywnych pojedynków.");
         return;
       }
 
@@ -604,6 +647,22 @@
       document.getElementById('admin-reveal-author-btn').classList.add('hidden');
     }
 
+    // KOD QR
+    function showQRCode() {
+      const qrContainer = document.getElementById('qrcode-container');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: window.location.href,
+        width: 220,
+        height: 220
+      });
+      document.getElementById('qr-modal').classList.remove('hidden');
+    }
+
+    function closeQRCode() {
+      document.getElementById('qr-modal').classList.add('hidden');
+    }
+
     function listenToStateChanges() {
       db.channel('state-channel')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_state' }, payload => {
@@ -631,8 +690,16 @@
         if (!currentMatchState || currentMatchState.title_a !== state.title_a || currentMatchState.title_b !== state.title_b) {
           hasVotedCurrentMatch = false;
           document.getElementById('voted-msg').classList.add('hidden');
+          document.getElementById('timer-expired-msg').classList.add('hidden');
           document.getElementById('vote-btn-a').disabled = false;
           document.getElementById('vote-btn-b').disabled = false;
+        }
+
+        if (state.timer_ends_at) {
+          runLocalTimer(state.timer_ends_at);
+        } else {
+          document.getElementById('voter-timer').classList.add('hidden');
+          clearInterval(timerInterval);
         }
 
         currentMatchState = state;
@@ -663,6 +730,62 @@
       document.getElementById('voted-msg').classList.remove('hidden');
 
       await db.from('votes').insert([{ chosen_title: chosenTitle }]);
+    }
+
+    async function stopVotingAndReturnToForm() {
+      if (!confirm("Zakończyć aktywne głosowanie i przywrócić formularz zgłoszeń?")) return;
+
+      await db.from('votes').delete().neq('id', 0);
+      await db.from('match_state').update({
+        is_active: false,
+        is_finished: false,
+        title_a: null,
+        title_b: null,
+        winner_title: null,
+        winner_author: null,
+        round_info: null,
+        timer_ends_at: null
+      }).eq('id', 1);
+
+      currentMatches = [];
+      currentMatchIndex = 0;
+      nextRoundWinners = [];
+      roundNumber = 1;
+
+      alert("Głosowanie wyłączone.");
+      location.reload();
+    }
+
+    async function restartTournament() {
+      if (!confirm("Ponowić losowanie z obecnych nazw?")) return;
+      const { data } = await db.from('items').select('*');
+      if (!data || data.length < 2) return alert("Za mało nazw!");
+      initNewTournament(data);
+    }
+
+    async function fullResetApp() {
+      if (!confirm("⚠️ Pełny reset czyszczący całą bazę! Na pewno?")) return;
+
+      await db.from('votes').delete().neq('id', 0);
+      await db.from('items').delete().neq('id', 0);
+      await db.from('match_state').update({
+        is_active: false,
+        is_finished: false,
+        title_a: null,
+        title_b: null,
+        winner_title: null,
+        winner_author: null,
+        round_info: null,
+        timer_ends_at: null
+      }).eq('id', 1);
+
+      currentMatches = [];
+      currentMatchIndex = 0;
+      nextRoundWinners = [];
+      roundNumber = 1;
+
+      alert("Aplikacja wyczyszczona na błysk!");
+      location.reload();
     }
   </script>
 </body>
