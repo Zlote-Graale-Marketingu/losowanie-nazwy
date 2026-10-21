@@ -20,7 +20,7 @@
       --c-rozowy-hover: #d43d84;
       --c-zolty: #ebab21;
       --c-czerwony: #e96730;
-       
+      
       --bg-color: #07050e;
       --card-bg: #110c22;
       --card-border: #231940;
@@ -342,7 +342,7 @@
   <script>
     const SUPABASE_URL = "https://skgblorvvqlahzvbpqps.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrZ2Jsb3J2dnFsYWh6dmJwcXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1Mzc5OTAsImV4cCI6MjEwNjExMzk5MH0.zrnC8JgN_N7AphLnti7UjkDwVY6HCw5sa33ADDHKxuE";
-    const ADMIN_PASSWORD = "skarpetunia"; 
+    const ADMIN_PASSWORD = "skarpetunia1"; 
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -616,7 +616,6 @@
 
       const pair = currentMatches[currentMatchIndex];
       
-      // Filtrowanie głosów wyłącznie na opcje A i B w TYM pojedynku
       const { data } = await db.from('votes').select('chosen_title');
       
       let countA = data ? data.filter(v => v.chosen_title === pair[0].title).length : 0;
@@ -664,7 +663,6 @@
       document.getElementById('qr-modal').classList.add('hidden');
     }
 
-    // PODŁĄCZENIE AUTOMATYCZNEGO ODŚWIEŻANIA DLA UCZESTNIKÓW NA ŻYWO
     function listenToStateChanges() {
       db.channel('public:match_state')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'match_state' }, payload => {
@@ -694,7 +692,6 @@
       }
 
       if (state.is_active && state.title_a && state.title_b) {
-        // Zmień pojedynek, odblokuj przyciski i schowaj powiadomienie
         if (!currentMatchState || currentMatchState.title_a !== state.title_a || currentMatchState.title_b !== state.title_b) {
           hasVotedCurrentMatch = false;
           document.getElementById('voted-msg').classList.add('hidden');
