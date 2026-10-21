@@ -102,6 +102,45 @@
     .btn-pink { background: var(--c-rozowy); color: white; }
     .btn-pink:hover { background: var(--c-rozowy-hover); }
 
+    /* Wyróżnione karty pojedynku w Panelu Prowadzącego */
+    .match-header-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 20px 0 24px 0;
+    }
+    .match-title-card {
+      flex: 1;
+      padding: 16px 12px;
+      border-radius: 16px;
+      font-size: 20px;
+      font-weight: 800;
+      word-break: break-word;
+      background: rgba(7, 5, 14, 0.8);
+      border: 2px solid var(--card-border);
+    }
+    .match-title-card.card-a {
+      color: var(--c-zielony);
+      border-color: rgba(74, 166, 30, 0.4);
+      background: rgba(74, 166, 30, 0.08);
+    }
+    .match-title-card.card-b {
+      color: var(--c-niebieski);
+      border-color: rgba(0, 114, 188, 0.4);
+      background: rgba(0, 114, 188, 0.08);
+    }
+    .match-vs-badge {
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--c-rozowy);
+      background: rgba(234, 85, 154, 0.15);
+      border: 1px solid rgba(234, 85, 154, 0.3);
+      padding: 6px 10px;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+
     .vote-box { display: flex; gap: 16px; margin-top: 20px; }
     .vote-btn { 
       flex: 1; 
@@ -193,7 +232,6 @@
     <span class="badge">🧼 Program Główny</span>
     <h2 style="margin-top: 12px;">Wrzuć propozycje do bębna!</h2>
     
-    <!-- Licznik zgłoszeń na żywo -->
     <div class="counter-box">🧺 Propozycji w bębnie: <span id="items-count">0</span></div>
 
     <p style="margin-bottom: 16px;">Wpisz swoje imię i nazwisko oraz wyślij przynajmniej jedną świeżą nazwę do turnieju.</p>
@@ -214,7 +252,6 @@
   <div id="voter-section" class="card hidden">
     <span id="voter-round" class="badge">Runda 1</span>
     
-    <!-- Odliczanie zegara dla głosującego -->
     <div id="voter-timer" class="badge timer-badge hidden">⏱️ Czas: <span id="voter-timer-sec">30</span>s</div>
 
     <h2 style="margin-top: 16px;">Która nazwa ma większą świeżość?</h2>
@@ -251,7 +288,13 @@
   <!-- PANEL PROWADZĄCEGO (Wyniki na żywo) -->
   <div id="admin-control" class="card hidden">
     <span id="admin-round" class="badge">Runda 1</span>
-    <h2 id="admin-match-title" style="margin-top: 16px;">Pojedynek</h2>
+    
+    <!-- Czytelny Nagłówek Pojedynku bez zlewających się słów -->
+    <div class="match-header-box">
+      <div id="title-card-a" class="match-title-card card-a">-</div>
+      <div class="match-vs-badge">VS</div>
+      <div id="title-card-b" class="match-title-card card-b">-</div>
+    </div>
     
     <div id="admin-match-view">
       <div class="progress-bar-container">
@@ -269,9 +312,9 @@
         <button onclick="start30sTimer()" class="btn-warning" style="width: auto; padding: 6px 14px; font-size: 12px; margin: 0;">⏱️ Włącz Timer 30s</button>
       </div>
 
-      <!-- SEKCJA ROZSTRZYGANIA REMISU -->
+      <!-- SEKCJA ROZSTRZYGANIA REMISU (EKSTRA GŁOSY) -->
       <div id="tie-breaker-section" class="tie-breaker-box hidden">
-        <p style="color: var(--c-zolty); font-weight: bold; margin-bottom: 10px;">⚖️ Mamy remis! Dodaj decydujący głos prowadzącego:</p>
+        <p style="color: var(--c-zolty); font-weight: bold; margin-bottom: 10px;">⚖️ Mamy remis! Dodaj ekstra głos rozstrzygający wygraną:</p>
         <div style="display: flex; gap: 10px;">
           <button id="tie-btn-a" onclick="addAdminVote('A')" class="btn-warning" style="margin:0; font-size: 13px;"></button>
           <button id="tie-btn-b" onclick="addAdminVote('B')" class="btn-warning" style="margin:0; font-size: 13px;"></button>
@@ -427,7 +470,6 @@
         return;
       }
 
-      // Zawsze inicjuj nowe losowanie po wejściu do panelu, jeśli baza zawierała null
       initNewTournament(data);
     }
 
@@ -578,7 +620,11 @@
       const percentB = 100 - percentA;
 
       document.getElementById('admin-round').innerText = stateData.round_info || 'Runda 1';
-      document.getElementById('admin-match-title').innerText = `${titleA} VS ${titleB}`;
+      
+      // Aktualizacja kart z tytułami pojedynku
+      document.getElementById('title-card-a').innerText = titleA;
+      document.getElementById('title-card-b').innerText = titleB;
+
       document.getElementById('label-a').innerText = `${titleA}: ${countA} głosów`;
       document.getElementById('label-b').innerText = `${titleB}: ${countB} głosów`;
       document.getElementById('total-votes-count').innerText = total;
@@ -588,16 +634,18 @@
       document.getElementById('bar-b').style.width = `${percentB}%`;
       document.getElementById('bar-b').innerText = countB > 0 ? `${countB}` : '';
 
+      // Przyciski ekstra głosów przy remisie
       const tieBreakerSec = document.getElementById('tie-breaker-section');
       if (countA === countB && titleA !== "Brak nazwy") {
         tieBreakerSec.classList.remove('hidden');
-        document.getElementById('tie-btn-a').innerText = `+1 głos dla "${titleA}"`;
-        document.getElementById('tie-btn-b').innerText = `+1 głos dla "${titleB}"`;
+        document.getElementById('tie-btn-a').innerText = `+1 ekstra głos dla "${titleA}"`;
+        document.getElementById('tie-btn-b').innerText = `+1 ekstra głos dla "${titleB}"`;
       } else {
         tieBreakerSec.classList.add('hidden');
       }
     }
 
+    // Dodanie Ekstra Głosu Prowadzącego
     async function addAdminVote(option) {
       if (!currentMatches[currentMatchIndex]) return;
       const pair = currentMatches[currentMatchIndex];
@@ -609,7 +657,6 @@
 
     async function nextMatch() {
       if (currentMatches.length === 0) {
-        // Zabezpieczenie: Jeśli drabina wygasła, zbuduj ją ponownie z bazy
         const { data } = await db.from('items').select('*');
         if (!data || data.length < 2) return alert("Za mało nazw w bazie!");
         initNewTournament(data);
@@ -627,7 +674,7 @@
       } else if (countB > countA) {
         nextRoundWinners.push(pair[1]);
       } else {
-        alert("Mamy remis! Użyj przycisków rozstrzygnięcia remisu powyżej, aby dodać decydujący głos prowadzącego.");
+        alert("Mamy remis! Użyj przycisków ekstra głosu powyżej, aby dodać rozstrzygający głos prowadzącego.");
         return;
       }
 
