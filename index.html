@@ -3,36 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Głosowanie na żywo | Robimy Social Media</title>
+  <title>Turniej Świeżych Nazw | Robimy Social Media</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,800&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* Zdefiniowana Paleta Kolorów */
-      --c-czerwony: rgb(233, 103, 48);
-      --c-zielony: rgb(74, 166, 30);
-      --c-rozowy: rgb(234, 85, 154);
-      --c-niebieski: rgb(0, 114, 188);
-      --c-zolty: rgb(235, 171, 33);
-      --c-fioletowy: rgb(156, 95, 176);
-      --c-szary: rgb(233, 213, 198);
-      --c-czern: rgb(0, 0, 0);
-      --c-biel: rgb(255, 255, 255);
-
-      /* Przypisanie motywu aplikacji */
-      --bg-color: #080612;
-      --card-bg: #130d28;
-      --card-border: #271c4d;
+      /* Nowy branding RSM - Paleta Świeżości */
+      --c-zielony: #4aa61e;
+      --c-zielony-hover: #3d8a18;
+      --c-niebieski: #0072bc;
+      --c-rozowy: #ea559a;
+      --c-rozowy-hover: #d43d84;
+      --c-zolty: #ebab21;
+      --c-czerwony: #e96730;
       
-      --accent-main: var(--c-zielony);
-      --accent-main-hover: rgb(62, 140, 25);
-      --accent-secondary: var(--c-niebieski);
-      --accent-pink: var(--c-rozowy);
+      --bg-color: #07050e;
+      --card-bg: #110c22;
+      --card-border: #231940;
       
-      --text-main: var(--c-biel);
-      --text-muted: var(--c-szary);
+      --text-main: #ffffff;
+      --text-muted: #bbb1d0;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -40,28 +32,29 @@
     body { 
       background-color: var(--bg-color); 
       color: var(--text-main); 
-      max-width: 650px; 
+      max-width: 680px; 
       margin: 0 auto; 
       padding: 24px 16px; 
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      background-image: radial-gradient(circle at top right, rgba(0, 114, 188, 0.2), transparent 45%),
-                        radial-gradient(circle at bottom left, rgba(74, 166, 30, 0.15), transparent 45%);
+      background-image: radial-gradient(circle at top right, rgba(0, 114, 188, 0.25), transparent 50%),
+                        radial-gradient(circle at bottom left, rgba(74, 166, 30, 0.2), transparent 50%);
     }
 
     .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     .brand-logo { font-size: 20px; font-weight: 800; color: var(--text-main); text-decoration: none; letter-spacing: -0.03em; }
-    .brand-logo span { color: var(--accent-main); }
+    .brand-logo span { color: var(--c-zielony); }
 
     .card { 
       background: var(--card-bg); 
       border: 1px solid var(--card-border); 
       padding: 32px 24px; 
       border-radius: 24px; 
-      box-shadow: 0 15px 35px rgba(0,0,0,0.6); 
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6); 
       margin-bottom: 24px; 
       text-align: center; 
+      position: relative;
     }
 
     h1, h2 { font-weight: 800; letter-spacing: -0.03em; margin-bottom: 12px; text-transform: uppercase; }
@@ -71,7 +64,7 @@
       width: 100%; 
       padding: 16px; 
       margin: 10px 0; 
-      background: var(--bg-color); 
+      background: rgba(7, 5, 14, 0.7); 
       border: 1px solid var(--card-border); 
       color: var(--text-main); 
       border-radius: 14px; 
@@ -79,76 +72,76 @@
       outline: none;
       transition: all 0.2s;
     }
-    input:focus { border-color: var(--accent-main); box-shadow: 0 0 0 2px rgba(74, 166, 30, 0.25); }
+    input:focus { border-color: var(--c-zielony); box-shadow: 0 0 0 3px rgba(74, 166, 30, 0.25); }
 
     button { 
       width: 100%; 
       padding: 16px; 
       margin: 10px 0; 
       border-radius: 14px; 
-      font-size: 16px; 
+      font-size: 15px; 
       font-weight: 800; 
       border: none; 
       cursor: pointer; 
       transition: all 0.2s ease;
-      background: var(--accent-main); 
+      background: var(--c-zielony); 
       color: var(--text-main); 
       text-transform: uppercase;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.03em;
     }
-    button:hover { background: var(--accent-main-hover); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(74, 166, 30, 0.3); }
+    button:hover { background: var(--c-zielony-hover); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(74, 166, 30, 0.3); }
     
-    .btn-secondary { background: #22184c; color: var(--text-main); border: 1px solid var(--card-border); }
-    .btn-secondary:hover { background: #2f2366; }
+    .btn-secondary { background: #1c1438; color: var(--text-main); border: 1px solid var(--card-border); }
+    .btn-secondary:hover { background: #281d4e; color: var(--text-main); }
     .btn-danger { background: var(--c-czerwony); color: white; }
     .btn-danger:hover { opacity: 0.9; }
-    .btn-warning { background: var(--c-zolty); color: var(--c-czern); }
+    .btn-warning { background: var(--c-zolty); color: #000; }
     .btn-warning:hover { opacity: 0.9; }
-    .btn-pink { background: var(--accent-pink); color: white; }
-    .btn-pink:hover { opacity: 0.9; }
+    .btn-pink { background: var(--c-rozowy); color: white; }
+    .btn-pink:hover { background: var(--c-rozowy-hover); }
 
     .vote-box { display: flex; gap: 16px; margin-top: 24px; }
     .vote-btn { 
       flex: 1; 
-      padding: 28px 16px; 
-      font-size: 20px; 
+      padding: 24px 16px; 
+      font-size: 18px; 
       font-weight: 800; 
       word-break: break-word; 
       border-radius: 18px;
-      background: var(--bg-color);
+      background: rgba(7, 5, 14, 0.6);
       color: var(--text-main);
       border: 2px solid var(--card-border);
       text-transform: none;
     }
-    .vote-btn:hover { border-color: var(--accent-main); background: var(--card-bg); color: var(--accent-main); }
-    .vote-btn-b:hover { border-color: var(--accent-secondary); color: var(--accent-secondary); }
+    .vote-btn:hover { border-color: var(--c-zielony); background: var(--card-bg); color: var(--c-zielony); }
+    .vote-btn-b:hover { border-color: var(--c-niebieski); color: var(--c-niebieski); }
 
     .progress-bar-container { 
-      background: var(--bg-color); 
+      background: rgba(7, 5, 14, 0.8); 
       border-radius: 14px; 
       overflow: hidden; 
       margin: 20px 0 10px 0; 
       display: flex; 
-      height: 44px; 
+      height: 48px; 
       border: 1px solid var(--card-border);
     }
-    .progress-a { background: var(--accent-main); color: var(--text-main); display: flex; align-items: center; justify-content: center; font-weight: 800; transition: width 0.4s ease; }
-    .progress-b { background: var(--accent-secondary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; transition: width 0.4s ease; }
+    .progress-a { background: var(--c-zielony); color: var(--text-main); display: flex; align-items: center; justify-content: center; font-weight: 800; transition: width 0.4s ease; }
+    .progress-b { background: var(--c-niebieski); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; transition: width 0.4s ease; }
     
     .badge { 
       background: rgba(74, 166, 30, 0.15); 
-      color: var(--accent-main); 
+      color: var(--c-zielony); 
       border: 1px solid rgba(74, 166, 30, 0.3);
       padding: 6px 16px; 
       border-radius: 20px; 
-      font-size: 13px; 
+      font-size: 12px; 
       font-weight: 800;
       display: inline-block;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
     .admin-link { background: transparent; color: var(--text-muted); border: 1px solid var(--card-border); width: auto; padding: 6px 14px; font-size: 13px; font-weight: 700; margin: 0; text-transform: none; }
-    .admin-link:hover { color: var(--text-main); border-color: var(--accent-main); }
+    .admin-link:hover { color: var(--text-main); border-color: var(--c-zielony); }
     
     /* Sekcja rozstrzygania remisu */
     .tie-breaker-box {
@@ -173,40 +166,41 @@
 
   <!-- FORMULARZ DLA ZGŁASZAJĄCYCH -->
   <div id="form-section" class="card">
-    <h2>Dodaj swoje propozycje</h2>
-    <p style="margin-bottom: 20px;">Wpisz swoje imię i nazwisko oraz wyślij 2 nazwy do turnieju.</p>
+    <span class="badge">🧼 Program Główny</span>
+    <h2 style="margin-top: 12px;">Wrzuć propozycje do bębna!</h2>
+    <p style="margin-bottom: 20px;">Wpisz swoje imię i nazwisko oraz wyślij 2 pachnące świeżością nazwy do turnieju.</p>
     <input type="text" id="user" placeholder="Imię i Nazwisko" required>
-    <input type="text" id="name1" placeholder="Pierwsza nazwa" required>
-    <input type="text" id="name2" placeholder="Druga nazwa" required>
-    <button onclick="submitNames()">Wyślij zgłoszenie</button>
-    <p id="msg" style="color: var(--accent-main); font-weight: bold; margin-top: 10px;"></p>
+    <input type="text" id="name1" placeholder="Pierwsza świeża nazwa" required>
+    <input type="text" id="name2" placeholder="Druga świeża nazwa" required>
+    <button onclick="submitNames()">Wypierz i wyślij zgłoszenie 🧺</button>
+    <p id="msg" style="color: var(--c-zielony); font-weight: bold; margin-top: 10px;"></p>
   </div>
 
   <!-- EKRAN OCZEKIWANIA NA START TURNIEJU -->
   <div id="waiting-section" class="card hidden">
-    <h2>⌛ Oczekiwanie na turniej...</h2>
-    <p>Gdy prowadzący uruchomi pojedynek, opcje do głosowania pojawią się automatycznie na Twoim ekranie.</p>
+    <h2>⌛ Pranie wstępne... Czekamy na starcie!</h2>
+    <p>Gdy prowadzący uruchomi pojedynek, nazwy do głosowania pojawią się automatycznie na Twoim ekranie.</p>
   </div>
 
   <!-- PANEL DLA UCZESTNIKA (GŁOSOWANIE) -->
   <div id="voter-section" class="card hidden">
     <span id="voter-round" class="badge">Runda 1</span>
-    <h2 style="margin-top: 16px;">Kto powinien wygrać?</h2>
+    <h2 style="margin-top: 16px;">Która nazwa ma większą świeżość?</h2>
     <div class="vote-box">
       <button id="vote-btn-a" class="vote-btn" onclick="castVote('A')"></button>
       <button id="vote-btn-b" class="vote-btn vote-btn-b" onclick="castVote('B')"></button>
     </div>
-    <p id="voted-msg" class="hidden" style="color: var(--accent-main); font-weight: bold; margin-top: 20px;">
-      ✅ Twój głos został zarejestrowany! Czekaj na kolejny pojedynek.
+    <p id="voted-msg" class="hidden" style="color: var(--c-zielony); font-weight: bold; margin-top: 20px;">
+      ✅ Twój głos poleciał do bębna! Czekaj na kolejny pojedynek.
     </p>
   </div>
 
   <!-- LOGOWANIE PROWADZĄCEGO -->
   <div id="admin-login" class="card hidden">
     <h2>Panel Prowadzącego</h2>
-    <p style="margin-bottom: 16px;">Podaj hasło, aby uzyskać dostęp do sterowania turniejem.</p>
+    <p style="margin-bottom: 16px;">Podaj hasło, aby przejąć sterowanie nad pralką i turniejem.</p>
     <input type="password" id="password" placeholder="Podaj hasło">
-    <button onclick="startTournament()">Wejdź do Panelu Prowadzącego</button>
+    <button onclick="startTournament()">Wejdź do Panelu Prowadzącego 🚀</button>
     <button onclick="hideAdmin()" class="btn-secondary">← Powrót do strony</button>
   </div>
 
@@ -221,13 +215,13 @@
     </div>
     
     <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 20px; font-size: 14px;">
-      <span id="label-a" style="color: var(--accent-main);">-</span>
-      <span id="label-b" style="color: var(--accent-secondary);">-</span>
+      <span id="label-a" style="color: var(--c-zielony);">-</span>
+      <span id="label-b" style="color: var(--c-niebieski);">-</span>
     </div>
 
     <!-- SEKCJA ROZSTRZYGANIA REMISU DLA PROWADZĄCEGO -->
     <div id="tie-breaker-section" class="tie-breaker-box hidden">
-      <p style="color: var(--c-zolty); font-weight: bold; margin-bottom: 10px;">⚖️ Remis! Dodaj decydujący głos prowadzącego:</p>
+      <p style="color: var(--c-zolty); font-weight: bold; margin-bottom: 10px;">⚖️ Mamy remis! Dodaj decydujący głos prowadzącego:</p>
       <div style="display: flex; gap: 10px;">
         <button id="tie-btn-a" onclick="addAdminVote('A')" class="btn-warning" style="margin:0; font-size: 13px;"></button>
         <button id="tie-btn-b" onclick="addAdminVote('B')" class="btn-warning" style="margin:0; font-size: 13px;"></button>
@@ -236,15 +230,15 @@
 
     <button onclick="nextMatch()" class="btn-pink">Zakończ głosowanie i przejdź dalej ➔</button>
     <hr>
-    <button onclick="stopVotingAndReturnToForm()" class="btn-secondary">🛑 Zakończ głosowanie i otwórz zgłoszenia</button>
+    <button onclick="stopVotingAndReturnToForm()" class="btn-secondary">🛑 Zakończ głosowanie i otwórz wrzucanie nazw</button>
     <button onclick="restartTournament()" class="btn-warning">🔄 Ponów losowanie z obecnych nazw</button>
     <button onclick="fullResetApp()" class="btn-danger">🔥 Pełny reset (czyszczenie bazy i nazw)</button>
   </div>
 
   <!-- WYNIK FINALNY -->
   <div id="winner-section" class="card hidden">
-    <h2>🏆 Zwycięska Nazwa 🏆</h2>
-    <h1 id="winner-name" style="color: var(--accent-main); font-size: 32px; margin: 16px 0;"></h1>
+    <h2>🏆 Najbardziej Świeża Nazwa 🏆</h2>
+    <h1 id="winner-name" style="color: var(--c-zielony); font-size: 32px; margin: 16px 0;"></h1>
     <div id="author-box" class="hidden" style="margin-top: 16px; font-size: 18px; color: var(--text-muted);">
       Autor propozycji: <strong id="winner-author" style="color: var(--text-main);"></strong>
     </div>
@@ -275,29 +269,29 @@
       const name1 = document.getElementById('name1').value.trim();
       const name2 = document.getElementById('name2').value.trim();
 
-      if(!user || !name1 || !name2) return alert("Wypełnij wszystkie pola!");
+      if(!user || !name1 || !name2) return alert("Wypełnij wszystkie pola przed wypraniem nazw!");
 
-      document.getElementById('msg').innerText = "Sprawdzanie danych...";
+      document.getElementById('msg').innerText = "Sprawdzanie bębna...";
 
-      // 1. BLOKADA WIELOKROTNEGO ZGŁOSZENIA NA TO SAMO IMIĘ I NAZWISKO
+      // WERYFIKACJA UNIKALNOŚCI UŻYTKOWNIKA
       const { data: existingUser, error: checkError } = await db
         .from('items')
         .select('author')
         .ilike('author', user);
 
       if (checkError) {
-        alert("Błąd podczas weryfikacji użytkownika: " + checkError.message);
+        alert("Błąd podczas weryfikacji danych: " + checkError.message);
         document.getElementById('msg').innerText = "";
         return;
       }
 
       if (existingUser && existingUser.length > 0) {
-        alert("Osoba o tym imieniu i nazwisku zdążyła już dodać swoje propozycje!");
-        document.getElementById('msg').innerText = "Wyszukiwanie zgłoszenia: Wykryto podwójne dane!";
+        alert("Prawdziwa świeżość to unikalność! Osoba o tym imieniu i nazwisku już dodała swoje propozycje.");
+        document.getElementById('msg').innerText = "Wykryto powtórzenie imienia i nazwiska!";
         return;
       }
 
-      // 2. REJESTRACJA PROPOZYCJI
+      // ZAPIS NOWYCH NAZW
       const { error } = await db.from('items').insert([
         { author: user, title: name1 },
         { author: user, title: name2 }
@@ -307,7 +301,7 @@
         alert("Błąd zapisu: " + error.message);
         document.getElementById('msg').innerText = "";
       } else {
-        document.getElementById('msg').innerText = "Zgłoszenie zostało zapisane!";
+        document.getElementById('msg').innerText = "Świeże zgłoszenie wylądowało w bębnie!";
         document.getElementById('user').value = '';
         document.getElementById('name1').value = '';
         document.getElementById('name2').value = '';
@@ -347,7 +341,7 @@
 
       const { data } = await db.from('items').select('*');
       if (!data || data.length < 2) {
-        alert("Za mało nazw w bazie (min. 2), aby rozpocząć!");
+        alert("Za mało nazw w bazie (min. 2), aby rozpocząć cykl!");
         return;
       }
 
@@ -367,7 +361,7 @@
     }
 
     async function stopVotingAndReturnToForm() {
-      if (!confirm("Czy na pewno chcesz zakończyć aktywne głosowanie i przywrócić formularz dodawania nazw?")) return;
+      if (!confirm("Czy na pewno chcesz zakończyć aktywne głosowanie i przywrócić formularz zgłoszeń?")) return;
 
       await db.from('votes').delete().neq('id', 0);
       await db.from('match_state').update({
@@ -385,7 +379,7 @@
       nextRoundWinners = [];
       roundNumber = 1;
 
-      alert("Głosowanie zostało wyłączone. Uczestnicy widzą formularz zgłoszeniowy.");
+      alert("Głosowanie wyłączone. Uczestnicy widzą formularz dodawania propozycji.");
       location.reload();
     }
 
@@ -399,7 +393,7 @@
     }
 
     async function fullResetApp() {
-      if (!confirm("⚠️ Czy na pewno chcesz WYCZYSZCZYĆ całą bazę i zacząć od nowa od formularza zgłoszeń? Usunie to wszystkie dodane nazwy!")) return;
+      if (!confirm("⚠️ Pełny reset! Spowoduje to wyczyszczenie całej bazy danych i usunięcie propozycji! Na pewno?")) return;
 
       await db.from('votes').delete().neq('id', 0);
       await db.from('items').delete().neq('id', 0);
@@ -418,7 +412,7 @@
       nextRoundWinners = [];
       roundNumber = 1;
 
-      alert("Aplikacja została w pełni wyczyszczona. Uczestnicy mogą od nowa podawać nazwy!");
+      alert("Aplikacja wyczyszczona na błysk! Można od nowa zbierać nazwy.");
       location.reload();
     }
 
@@ -534,8 +528,8 @@
       const tieBreakerSec = document.getElementById('tie-breaker-section');
       if (countA === countB) {
         tieBreakerSec.classList.remove('hidden');
-        document.getElementById('tie-btn-a').innerText = `+1 dla "${stateData.title_a}"`;
-        document.getElementById('tie-btn-b').innerText = `+1 dla "${stateData.title_b}"`;
+        document.getElementById('tie-btn-a').innerText = `+1 głos dla "${stateData.title_a}"`;
+        document.getElementById('tie-btn-b').innerText = `+1 głos dla "${stateData.title_b}"`;
       } else {
         tieBreakerSec.classList.add('hidden');
       }
@@ -568,8 +562,8 @@
       } else if (countB > countA) {
         nextRoundWinners.push(pair[1]);
       } else {
-        // Remis - prośba do prowadzącego o rozstrzygnięcie
-        alert("Jest remis! Wykorzystaj przyciski 'Rozstrzygnięcie remisu', aby oddać decydujący głos przed przejściem dalej.");
+        // Remis - blokada i zapytanie o decydujący głos
+        alert("Mamy remis! Użyj przycisków rozstrzygnięcia remisu powyżej, aby dodać decydujący głos prowadzącego.");
         return;
       }
 
