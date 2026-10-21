@@ -102,7 +102,7 @@
     .btn-pink { background: var(--c-rozowy); color: white; }
     .btn-pink:hover { background: var(--c-rozowy-hover); }
 
-    /* Wyróżnione karty pojedynku w Panelu Prowadzącego */
+    /* Nagłówek Pojedynku w Panelu Prowadzącego */
     .match-header-box {
       display: flex;
       align-items: center;
@@ -154,8 +154,9 @@
       border: 2px solid var(--card-border);
       text-transform: none;
     }
-    .vote-btn:hover { border-color: var(--c-zielony); background: var(--card-bg); color: var(--c-zielony); }
-    .vote-btn-b:hover { border-color: var(--c-niebieski); color: var(--c-niebieski); }
+    .vote-btn:hover:not(:disabled) { border-color: var(--c-zielony); background: var(--card-bg); color: var(--c-zielony); }
+    .vote-btn-b:hover:not(:disabled) { border-color: var(--c-niebieski); color: var(--c-niebieski); }
+    .vote-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .progress-bar-container { 
       background: rgba(7, 5, 14, 0.8); 
@@ -180,15 +181,6 @@
       display: inline-block;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-    }
-    
-    .timer-badge {
-      background: rgba(234, 85, 154, 0.15);
-      color: var(--c-rozowy);
-      border: 1px solid rgba(234, 85, 154, 0.3);
-      font-size: 16px;
-      padding: 8px 18px;
-      margin-top: 10px;
     }
 
     .counter-box {
@@ -215,7 +207,7 @@
 
     #qrcode-container img { margin: 0 auto; border: 8px solid #fff; border-radius: 12px; }
 
-    .hidden { display: none; }
+    .hidden { display: none !important; }
     hr { border: none; border-top: 1px solid var(--card-border); margin: 24px 0; }
   </style>
 </head>
@@ -251,8 +243,6 @@
   <!-- PANEL DLA UCZESTNIKA (GŁOSOWANIE) -->
   <div id="voter-section" class="card hidden">
     <span id="voter-round" class="badge">Runda 1</span>
-    
-    <div id="voter-timer" class="badge timer-badge hidden">⏱️ Czas: <span id="voter-timer-sec">30</span>s</div>
 
     <h2 style="margin-top: 16px;">Która nazwa ma większą świeżość?</h2>
     <div class="vote-box">
@@ -261,9 +251,6 @@
     </div>
     <p id="voted-msg" class="hidden" style="color: var(--c-zielony); font-weight: bold; margin-top: 20px;">
       ✅ Twój głos poleciał do bębna! Czekaj na kolejny pojedynek.
-    </p>
-    <p id="timer-expired-msg" class="hidden" style="color: var(--c-czerwony); font-weight: bold; margin-top: 20px;">
-      ⏳ Czas na głosowanie w tym pojedynku dobiegł końca!
     </p>
   </div>
 
@@ -289,7 +276,6 @@
   <div id="admin-control" class="card hidden">
     <span id="admin-round" class="badge">Runda 1</span>
     
-    <!-- Czytelny Nagłówek Pojedynku bez zlewających się słów -->
     <div class="match-header-box">
       <div id="title-card-a" class="match-title-card card-a">-</div>
       <div class="match-vs-badge">VS</div>
@@ -309,10 +295,9 @@
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <span style="font-size: 13px; color: var(--text-muted);">Łącznie głosów: <strong id="total-votes-count" style="color: #fff;">0</strong></span>
-        <button onclick="start30sTimer()" class="btn-warning" style="width: auto; padding: 6px 14px; font-size: 12px; margin: 0;">⏱️ Włącz Timer 30s</button>
       </div>
 
-      <!-- SEKCJA ROZSTRZYGANIA REMISU (EKSTRA GŁOSY) -->
+      <!-- SEKCJA ROZSTRZYGANIA REMISU -->
       <div id="tie-breaker-section" class="tie-breaker-box hidden">
         <p style="color: var(--c-zolty); font-weight: bold; margin-bottom: 10px;">⚖️ Mamy remis! Dodaj ekstra głos rozstrzygający wygraną:</p>
         <div style="display: flex; gap: 10px;">
@@ -368,7 +353,6 @@
     let isAdmin = false;
     let hasVotedCurrentMatch = false;
     let currentMatchState = null;
-    let timerInterval = null;
 
     window.onload = () => {
       listenToStateChanges();
@@ -552,41 +536,11 @@
         title_b: pair[1].title,
         round_info: roundText,
         is_active: true,
-        is_finished: false,
-        timer_ends_at: null
+        is_finished: false
       }).eq('id', 1);
 
       updateVoteCounts();
       listenToVotes();
-    }
-
-    async function start30sTimer() {
-      const endsAt = Date.now() + 30000;
-      await db.from('match_state').update({ timer_ends_at: endsAt }).eq('id', 1);
-    }
-
-    function runLocalTimer(endsAt) {
-      clearInterval(timerInterval);
-      const timerBox = document.getElementById('voter-timer');
-      const timerSec = document.getElementById('voter-timer-sec');
-      document.getElementById('timer-expired-msg').classList.add('hidden');
-
-      timerBox.classList.remove('hidden');
-
-      timerInterval = setInterval(() => {
-        const left = Math.ceil((endsAt - Date.now()) / 1000);
-        if (left <= 0) {
-          clearInterval(timerInterval);
-          timerSec.innerText = '0';
-          document.getElementById('vote-btn-a').disabled = true;
-          document.getElementById('vote-btn-b').disabled = true;
-          if (!hasVotedCurrentMatch) {
-            document.getElementById('timer-expired-msg').classList.remove('hidden');
-          }
-        } else {
-          timerSec.innerText = left;
-        }
-      }, 500);
     }
 
     function listenToVotes() {
@@ -621,7 +575,6 @@
 
       document.getElementById('admin-round').innerText = stateData.round_info || 'Runda 1';
       
-      // Aktualizacja kart z tytułami pojedynku
       document.getElementById('title-card-a').innerText = titleA;
       document.getElementById('title-card-b').innerText = titleB;
 
@@ -630,11 +583,10 @@
       document.getElementById('total-votes-count').innerText = total;
 
       document.getElementById('bar-a').style.width = `${percentA}%`;
-      document.getElementById('bar-a').innerText = countA > 0 ? `${countA}` : '';
+      document.getElementById('bar-a').innerText = countA > 0 ? `${countA}` : '0';
       document.getElementById('bar-b').style.width = `${percentB}%`;
-      document.getElementById('bar-b').innerText = countB > 0 ? `${countB}` : '';
+      document.getElementById('bar-b').innerText = countB > 0 ? `${countB}` : '0';
 
-      // Przyciski ekstra głosów przy remisie
       const tieBreakerSec = document.getElementById('tie-breaker-section');
       if (countA === countB && titleA !== "Brak nazwy") {
         tieBreakerSec.classList.remove('hidden');
@@ -645,7 +597,6 @@
       }
     }
 
-    // Dodanie Ekstra Głosu Prowadzącego
     async function addAdminVote(option) {
       if (!currentMatches[currentMatchIndex]) return;
       const pair = currentMatches[currentMatchIndex];
@@ -664,6 +615,8 @@
       }
 
       const pair = currentMatches[currentMatchIndex];
+      
+      // Filtrowanie głosów wyłącznie na opcje A i B w TYM pojedynku
       const { data } = await db.from('votes').select('chosen_title');
       
       let countA = data ? data.filter(v => v.chosen_title === pair[0].title).length : 0;
@@ -711,9 +664,10 @@
       document.getElementById('qr-modal').classList.add('hidden');
     }
 
+    // PODŁĄCZENIE AUTOMATYCZNEGO ODŚWIEŻANIA DLA UCZESTNIKÓW NA ŻYWO
     function listenToStateChanges() {
-      db.channel('state-channel')
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'match_state' }, payload => {
+      db.channel('public:match_state')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'match_state' }, payload => {
           handleStateUpdate(payload.new);
         })
         .subscribe();
@@ -724,7 +678,12 @@
     }
 
     function handleStateUpdate(state) {
-      if (isAdmin) return;
+      if (!state) return;
+
+      if (isAdmin) {
+        updateVoteCounts();
+        return;
+      }
 
       if (state.is_finished) {
         document.getElementById('form-section').classList.add('hidden');
@@ -735,19 +694,12 @@
       }
 
       if (state.is_active && state.title_a && state.title_b) {
+        // Zmień pojedynek, odblokuj przyciski i schowaj powiadomienie
         if (!currentMatchState || currentMatchState.title_a !== state.title_a || currentMatchState.title_b !== state.title_b) {
           hasVotedCurrentMatch = false;
           document.getElementById('voted-msg').classList.add('hidden');
-          document.getElementById('timer-expired-msg').classList.add('hidden');
           document.getElementById('vote-btn-a').disabled = false;
           document.getElementById('vote-btn-b').disabled = false;
-        }
-
-        if (state.timer_ends_at) {
-          runLocalTimer(state.timer_ends_at);
-        } else {
-          document.getElementById('voter-timer').classList.add('hidden');
-          clearInterval(timerInterval);
         }
 
         currentMatchState = state;
@@ -791,8 +743,7 @@
         title_b: null,
         winner_title: null,
         winner_author: null,
-        round_info: null,
-        timer_ends_at: null
+        round_info: null
       }).eq('id', 1);
 
       currentMatches = [];
@@ -822,8 +773,7 @@
         title_b: null,
         winner_title: null,
         winner_author: null,
-        round_info: null,
-        timer_ends_at: null
+        round_info: null
       }).eq('id', 1);
 
       currentMatches = [];
